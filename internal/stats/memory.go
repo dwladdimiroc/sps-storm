@@ -2,7 +2,7 @@ package stats
 
 import (
 	"fmt"
-	"github.com/dwladdimiroc/sps-storm/util"
+	"github.com/dwladdimiroc/sps-storm/internal/util"
 	"github.com/mackerelio/go-osstat/memory"
 	"os"
 	"sync"

@@ -1,10 +1,12 @@
 package app
 
-import "github.com/dwladdimiroc/stats-storm/exec"
+import (
+	"github.com/dwladdimiroc/sps-storm/internal/util"
+)
 
 func Deploy() {
 	appCmdStormApp := "sh"
 	argsCmdStormApp := []string{"startApp.sh"}
 	dirCmdStormApp := "/home/daniel/storm/projects"
-	exec.Execute(appCmdStormApp, argsCmdStormApp, dirCmdStormApp)
+	util.Execute(appCmdStormApp, argsCmdStormApp, dirCmdStormApp)
 }

@@ -1,7 +1,7 @@
 package stats
 
 import (
-	"github.com/dwladdimiroc/sps-storm/util"
+	"github.com/dwladdimiroc/sps-storm/internal/util"
 	"sync"
 	"time"
 )

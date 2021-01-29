@@ -7,3 +7,7 @@ const (
 	GB
 	TB
 )
+
+const (
+	SECS = 1000
+)

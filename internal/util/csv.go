@@ -23,8 +23,16 @@ func csvGetData(line string) string {
 	}
 }
 
-func CreateCsv(filename string, data interface{}) error {
-	if f, err := os.Create(viper.GetString("storm.csv") + filename + ".csv"); err != nil {
+func CreateDir(topologyId string) error {
+	if err := os.Mkdir(viper.GetString("storm.csv")+"/"+topologyId, 0755); err != nil {
+		return err
+	} else {
+		return nil
+	}
+}
+
+func CreateCsv(topologyId string, filename string, data interface{}) error {
+	if f, err := os.Create(viper.GetString("storm.csv") + "/" + topologyId + "/" + filename + ".csv"); err != nil {
 		return err
 	} else {
 		if b, err := csvutil.Marshal(data); err != nil {
@@ -42,13 +50,14 @@ func CreateCsv(filename string, data interface{}) error {
 			}
 		}
 	}
+
 }
 
-func WriteCsv(filename string, data interface{}) error {
+func WriteCsv(topologyId string, filename string, data interface{}) error {
 	if b, err := csvutil.Marshal(data); err != nil {
 		return err
 	} else {
-		if f, err := os.OpenFile(viper.GetString("storm.csv")+filename+".csv", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644); err != nil {
+		if f, err := os.OpenFile(viper.GetString("storm.csv")+"/"+topologyId+"/"+filename+".csv", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644); err != nil {
 			return err
 		} else {
 			defer f.Close()

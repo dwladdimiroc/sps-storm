@@ -4,10 +4,22 @@ nimbus:
   port: 8772
 
 storm:
+  deploy:
+    duration: 10
+    script: "synthetic.sh"
   adaptive:
-    time_window: 5
-    reactive:
-      throughput_weight: 0.8
-      latency_weight: 0.1
-      queue_weight: 0.1
-  csv: ./stats/
+    time_window_size: 5
+    logical:
+      reactive:
+        number_samples: 12
+        upper_limit: 0.7
+        lower_limit: 0.3
+        number_replicas: 1
+      predictive:
+        number_samples: 120
+        number_replicas: 10
+      metric:
+        throughput_weight: 0.8
+        latency_weight: 0.1
+        queue_weight: 0.1
+  csv: "stats/"

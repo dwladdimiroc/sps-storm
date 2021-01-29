@@ -1,17 +1,22 @@
 package storm
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"github.com/spf13/viper"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 )
 
 const NimbusSummaryTopologyBaseURL = "http://UI_HOST:UI_PORT/api/v1/topology/TOPOLOGY_ID?sys=0&windows=all-time"
 const NimbusMetricsBaseURL = "http://UI_HOST:UI_PORT/api/v1/topology/TOPOLOGY_ID/metrics?window=600"
+const NimbusRebalancedBaseURL = "http://UI_HOST:UI_PORT/api/v1/topology/TOPOLOGY_ID/rebalance/0"
+const NimbusSummaryTopologies = "http://UI_HOST:UI_PORT/api/v1/topology/summary"
 
 func parseURL(urlRaw string, topologyId string) string {
 	var url string
@@ -23,11 +28,60 @@ func parseURL(urlRaw string, topologyId string) string {
 	return url
 }
 
+type SummaryTopologies struct {
+	Topologies []struct {
+		ID                  string  `json:"id"`
+		Name                string  `json:"name"`
+		Status              string  `json:"status"`
+		Uptime              string  `json:"uptime"`
+		UptimeSeconds       float64 `json:"uptimeSeconds"`
+		TasksTotal          float64 `json:"tasksTotal"`
+		WorkersTotal        float64 `json:"workersTotal"`
+		ExecutorsTotal      float64 `json:"executorsTotal"`
+		ReplicationCount    float64 `json:"replicationCount"`
+		RequestedMemOnHeap  float64 `json:"requestedMemOnHeap"`
+		RequestedMemOffHeap float64 `json:"requestedMemOffHeap"`
+		RequestedTotalMem   float64 `json:"requestedTotalMem"`
+		RequestedCPU        float64 `json:"requestedCpu"`
+		AssignedMemOnHeap   float64 `json:"assignedMemOnHeap"`
+		AssignedMemOffHeap  float64 `json:"assignedMemOffHeap"`
+		AssignedTotalMem    float64 `json:"assignedTotalMem"`
+		AssignedCPU         float64 `json:"assignedCpu"`
+	} `json:"topologies"`
+	SchedulerDisplayResource bool `json:"schedulerDisplayResource"`
+}
+
+func GetTopologyId() string {
+	var summaryTopologies SummaryTopologies
+
+	nimbusSummaryTopologies := parseURL(NimbusSummaryTopologies, "")
+	if res, err := http.Get(nimbusSummaryTopologies); err != nil {
+		fmt.Printf("storm get summary topologies: %v\n", err)
+	} else {
+		data, _ := ioutil.ReadAll(res.Body)
+		if err := res.Body.Close(); err != nil {
+			fmt.Printf("storm get summary topologies: %v\n", err)
+		} else {
+			if err := json.Unmarshal(data, &summaryTopologies); err != nil {
+				fmt.Printf("storm get summary topologies: %v\n", err)
+			}
+		}
+	}
+
+	if len(summaryTopologies.Topologies) > 0 {
+		return summaryTopologies.Topologies[0].ID
+	} else {
+		time.Sleep(1 * time.Second)
+		return GetTopologyId()
+	}
+}
+
 type MetricsAPI struct {
 	Window     string        `json:"window"`
 	WindowHint string        `json:"window-hint"`
 	Spouts     []SpoutMetric `json:"spouts"`
 	Bolts      []BoltMetric  `json:"bolts"`
+	Error      string        `json:"error"`
 }
 
 func (m *MetricsAPI) ParseValue() {
@@ -90,7 +144,7 @@ func (c *ChannelAvg) parseValue() {
 	c.ValueFloat, _ = strconv.ParseFloat(c.Value, 64)
 }
 
-func GetMetrics(topologyId string) MetricsAPI {
+func GetMetrics(topologyId string) (bool, MetricsAPI) {
 	var metricsTopology MetricsAPI
 
 	nimbusMetricsApiUrl := parseURL(NimbusMetricsBaseURL, topologyId)
@@ -103,13 +157,17 @@ func GetMetrics(topologyId string) MetricsAPI {
 		} else {
 			if err := json.Unmarshal(data, &metricsTopology); err != nil {
 				fmt.Printf("storm get metrics: %v\n", err)
+			} else {
+				if metricsTopology.Error != "" {
+					return false, metricsTopology
+				}
 			}
 		}
 	}
 
 	metricsTopology.ParseValue()
 
-	return metricsTopology
+	return true, metricsTopology
 }
 
 type SummaryTopology struct {
@@ -123,6 +181,7 @@ type SummaryTopology struct {
 	Bolts []struct {
 		BoltID string `json:"boltId"`
 	} `json:"bolts"`
+	Error string `json:"error"`
 }
 
 func GetSummaryTopology(topologyId string) SummaryTopology {
@@ -142,5 +201,24 @@ func GetSummaryTopology(topologyId string) SummaryTopology {
 		}
 	}
 
-	return summaryTopology
+	if len(summaryTopology.Bolts) > 0 {
+		return summaryTopology
+	} else {
+		time.Sleep(1 * time.Second)
+		return GetSummaryTopology(topologyId)
+	}
+}
+
+func Rebalanced(topologyId, params string) bool {
+	nimbusRebalanced := parseURL(NimbusRebalancedBaseURL, topologyId)
+	if resp, err := http.Post(nimbusRebalanced, "application/json", bytes.NewBuffer([]byte(params))); err != nil {
+		log.Fatal(err)
+		return false
+	} else {
+		if resp.StatusCode == 200 {
+			return true
+		} else {
+			return false
+		}
+	}
 }

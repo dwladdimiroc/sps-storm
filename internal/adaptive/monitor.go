@@ -7,11 +7,18 @@ import (
 	"log"
 )
 
-func UpdateStats(topologyId string, topology *storm.Topology) {
-	log.Printf("update stats topology")
-	metricsApi := storm.GetMetrics(topologyId)
-	updateTopology(topology, metricsApi)
-	saveMetrics(*topology)
+func monitor(topologyId string, topology *storm.Topology) bool {
+	if ok, metricsApi := storm.GetMetrics(topologyId); ok {
+		log.Printf("monitor: update stats topology")
+		updateTopology(topology, metricsApi)
+		saveMetrics(*topology)
+		topology.ClearStatsTimeWindow()
+		period++
+		return ok
+	} else {
+		log.Printf("monitor: error get metric")
+		return ok
+	}
 }
 
 func updateTopology(topology *storm.Topology, api storm.MetricsAPI) {
@@ -46,11 +53,7 @@ func updateStatsBolt(topology *storm.Topology, api storm.MetricsAPI) {
 
 	for i := range topology.Bolts {
 		updateInputBolt(&topology.Bolts[i], api)
-		topology.Bolts[i].CalculateUtilization()
-		topology.Bolts[i].CalculateQueueMetric()
-		topology.Bolts[i].CalculatePredictionReplicas()
-		topology.Bolts[i].CalculateMetric()
-		topology.Bolts[i].ClearStatsTimeWindow()
+		topology.Bolts[i].CalculateStats()
 	}
 }
 
@@ -66,7 +69,7 @@ func updateOutputBolt(topology *storm.Topology, boltApi storm.BoltMetric) {
 					}
 				}
 			}
-			topology.Bolts[i].ExecutedTimeAvg = topology.Bolts[i].ExecutedTimeAvg / float64(topology.Bolts[i].ExecutedTotal)
+			topology.Bolts[i].ExecutedTimeAvg = topology.Bolts[i].ExecutedTimeAvg / float64(topology.Bolts[i].Output)
 		}
 	}
 }
@@ -94,7 +97,7 @@ func updateInputBolt(bolt *storm.Bolt, api storm.MetricsAPI) {
 
 func saveMetrics(topology storm.Topology) {
 	for _, bolt := range topology.Bolts {
-		if err := util.WriteCsv(bolt.Name, []storm.Bolt{bolt}); err != nil {
+		if err := util.WriteCsv(topology.Id, bolt.Name, []storm.Bolt{bolt}); err != nil {
 			fmt.Printf("error write csv: %v\n", err)
 		}
 	}

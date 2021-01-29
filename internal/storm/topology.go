@@ -9,52 +9,80 @@ import (
 )
 
 type Bolt struct {
-	Time               int64   `csv:"time"`
 	Name               string  `csv:"name"`
+	Time               int64   `csv:"time"`
 	Replicas           int64   `csv:"replicas"`
 	PredictionReplicas int64   `csv:"prediction_replicas"`
 	Input              int64   `csv:"input"`
 	Output             int64   `csv:"output"`
 	ExecutedTimeAvg    float64 `csv:"executed_time_avg"`
 	//TransmitterTimeAvg float64 `csv:"transmitter_time_avg"`
-	LatencyAvg    float64            `csv:"latency_avg"`
-	Utilization   float64            `csv:"utilization"`
-	Queue         int64              `csv:"queue"`
-	QueueMetric   float64            `csv:"queue_metric"`
-	ExecutedTotal int64              `csv:"executed_total"`
-	Metric        float64            `csv:"metric"`
-	Location      map[string]float64 `csv:"-"`
+	LatencyAvg     float64            `csv:"latency_avg"`
+	Utilization    float64            `csv:"utilization"`
+	Queue          int64              `csv:"queue"`
+	QueueMetric    float64            `csv:"queue_metric"`
+	EventLoss      int64              `csv:"event_loss"`
+	EventLossAccum int64              `csv:"event_loss_accum"`
+	ExecutedTotal  int64              `csv:"executed_total"`
+	Metric         float64            `csv:"metric"`
+	Location       map[string]float64 `csv:"-"`
+	HistoryMetrics []float64          `csv:"-"`
+	AlertMetrics   []int              `csv:"-"`
 }
 
-func (b *Bolt) CalculateUtilization() {
-	b.Utilization = (b.ExecutedTimeAvg * float64(b.Output)) / (float64(viper.GetInt("storm.adaptive.time_window")) * float64(1000))
+func (b *Bolt) CalculateStats() {
+	b.calculateQueue()
+	b.calculateUtilization()
+	b.calculateQueueMetric()
+	b.calculatePredictionReplicas()
+	b.calculateMetric()
 }
 
-func (b *Bolt) CalculateQueueMetric() {
-	b.QueueMetric = 1 - (float64(b.Output*b.Replicas) / float64(b.Input))
-	if b.QueueMetric < 0 {
-		b.QueueMetric = 0
+func (b *Bolt) calculateQueue() {
+	b.Queue += b.Input - b.Output
+}
+
+func (b *Bolt) calculateUtilization() {
+	if math.IsNaN(b.ExecutedTimeAvg) {
+		b.Utilization = 0
+	} else {
+		b.Utilization = (b.ExecutedTimeAvg * float64(b.Output)) / (float64(b.Replicas * int64(viper.GetInt("storm.adaptive.time_window_size")) * util.SECS))
 	}
 }
 
-func (b *Bolt) CalculatePredictionReplicas() {
-	b.Queue += b.Input - b.Output
+func (b *Bolt) calculateQueueMetric() {
+	if b.Queue == 0 {
+		b.QueueMetric = 0
+	} else {
+		if x := float64(b.Output) / float64(b.Queue); x < 0 {
+			x *= -1
+		} else {
+			b.QueueMetric = 1 - x
+			if b.QueueMetric < 0 {
+				b.QueueMetric = 0
+			}
+		}
+	}
+}
+
+func (b *Bolt) calculatePredictionReplicas() {
 	if b.Queue > 0 {
-		x := float64(b.Output) / float64(b.Queue)
+		x := float64(b.Output) / float64(b.Input)
 		if x < 1 {
 			b.PredictionReplicas = int64(math.Ceil(1 / x))
 		}
 	}
 }
 
-func (b *Bolt) CalculateMetric() {
+func (b *Bolt) calculateMetric() {
 	b.Time += 5
-	b.Metric = viper.GetFloat64("storm.adaptive.reactive.throughput_weight")*b.Utilization +
-		viper.GetFloat64("storm.adaptive.reactive.latency_weight")*b.LatencyAvg +
-		viper.GetFloat64("storm.adaptive.reactive.queue_weight")*b.QueueMetric
+	b.Metric = viper.GetFloat64("storm.adaptive.logical.metric.throughput_weight")*b.Utilization +
+		viper.GetFloat64("storm.adaptive.logical.metric.latency_weight")*b.LatencyAvg +
+		viper.GetFloat64("storm.adaptive.logical.metric.queue_weight")*b.QueueMetric
+	b.HistoryMetrics = append(b.HistoryMetrics, b.Metric)
 }
 
-func (b *Bolt) ClearStatsTimeWindow() {
+func (b *Bolt) clearStatsTimeWindow() {
 	b.Input = 0
 	b.Output = 0
 	b.ExecutedTimeAvg = 0
@@ -95,9 +123,19 @@ func (t *Topology) CreateTopology(summaryTopology SummaryTopology) {
 		}
 	}
 
+	if err := util.CreateDir(t.Id); err != nil {
+		fmt.Printf("error mkdir: %v\n", err)
+	}
+
 	for _, bolt := range t.Bolts {
-		if err := util.CreateCsv(bolt.Name, []Bolt{}); err != nil {
+		if err := util.CreateCsv(t.Id, bolt.Name, []Bolt{}); err != nil {
 			fmt.Printf("error create csv: %v\n", err)
 		}
+	}
+}
+
+func (t *Topology) ClearStatsTimeWindow() {
+	for i := range t.Bolts {
+		t.Bolts[i].clearStatsTimeWindow()
 	}
 }

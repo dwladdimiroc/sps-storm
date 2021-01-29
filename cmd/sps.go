@@ -2,18 +2,17 @@ package main
 
 import (
 	"github.com/dwladdimiroc/sps-storm/internal/adaptive"
+	"github.com/dwladdimiroc/sps-storm/internal/app"
 	"github.com/dwladdimiroc/sps-storm/internal/util"
+	"github.com/spf13/viper"
+	"log"
 	"time"
 )
 
-const NAME_APP = "testApp"
-const DURATION = 1 * time.Hour
-
 func main() {
-	util.LoadConfig()
-	var topologyId = "syntheticApp-1-1610997255"
-	adaptive.Init(topologyId)
-	adaptive.Start()
+	if err := util.LoadConfig(); err != nil {
+		log.Panicf("error load config: %v\n", err)
+	}
 
 	//Create instance VM in GCP
 	//function createInstance()
@@ -22,10 +21,12 @@ func main() {
 	//stats.Collect(NAME_APP, DURATION)
 
 	//Deploy app
-	//app.Deploy()
+	topologyId := app.Deploy()
 
 	//Execute adaptive
-	//function executorMonitor
+	adaptive.Init(topologyId)
+	adaptive.Start(time.Duration(viper.GetInt("storm.deploy.duration")) * time.Minute)
+	adaptive.Stop()
 
 	//Finish program
 	// function finishProgram

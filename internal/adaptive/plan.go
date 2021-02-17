@@ -1,8 +1,12 @@
 package adaptive
 
-import "github.com/dwladdimiroc/sps-storm/internal/storm"
+import (
+	"github.com/dwladdimiroc/sps-storm/internal/storm"
+	"log"
+)
 
 func planning(stateBolts map[string]int, topology *storm.Topology) {
+	log.Printf("planning: %v\n", stateBolts)
 	for nameBolt, stateBolt := range stateBolts {
 		if stateBolt > 0 {
 			addReplicaBolt(nameBolt, topology, int64(stateBolt))

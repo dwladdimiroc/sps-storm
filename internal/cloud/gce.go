@@ -121,3 +121,7 @@ func CreateGCEInstance() {
 	 "selfLink": "https://www.googleapis.com/compute/v1/projects/<your-project-here>/zones/europe-west1-d/operations/operation-1548831024777-580a7530c89ff-f50206a4-348f6778"
 	}
 */
+
+func createVM() {
+	//gcloud compute instances create vm-test --preemptible --zone=europe-west1-b
+}

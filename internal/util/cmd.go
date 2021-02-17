@@ -3,6 +3,7 @@ package util
 import (
 	"bytes"
 	"fmt"
+	"log"
 	"os"
 	"os/exec"
 	//	"strings"
@@ -23,7 +24,7 @@ func printOutput(outs []byte) {
 }
 
 func Run(app string, args []string, dir string, interval int) string {
-	fmt.Println("Executing " + app)
+	log.Printf("Running %v %v\n", app, args)
 
 	cmd := exec.Command(app)
 	if dir != "" {
@@ -49,7 +50,7 @@ func Run(app string, args []string, dir string, interval int) string {
 }
 
 func Execute(app string, args []string, dir string) string {
-	fmt.Println("Executing " + app)
+	log.Printf("Executing %v %v\n", app, args)
 	cmd := exec.Command(app, args...)
 	if dir != "" {
 		cmd.Dir = dir
@@ -67,7 +68,7 @@ func Execute(app string, args []string, dir string) string {
 }
 
 func Start(app string, args []string, dir string, interval int) string {
-	fmt.Println("Executing " + app)
+	log.Printf("Starting %v %v\n", app, args)
 	cmd := exec.Command(app, args...)
 	cmd.Dir = dir
 	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}

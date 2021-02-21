@@ -20,6 +20,9 @@ func main() {
 	//Collect stats as CPU/RAM/Bandwidth
 	//stats.Collect(NAME_APP, DURATION)
 
+	//Previous deploy
+	previousDeploy()
+
 	//Deploy app
 	topologyId := app.Deploy()
 
@@ -30,4 +33,10 @@ func main() {
 
 	//Finish program
 	// function finishProgram
+}
+
+func previousDeploy() {
+	if err := util.RedisFlush(); err != nil {
+		log.Printf("redis error: %v\n", err)
+	}
 }

@@ -32,6 +32,9 @@ func removeReplicaBolt(nameBolt string, topology *storm.Topology) {
 		if topology.Bolts[i].Name == nameBolt {
 			if topology.Bolts[i].Replicas > 1 {
 				topology.Bolts[i].Replicas -= viper.GetInt64("storm.adaptive.reactive.number_replicas")
+				if topology.Bolts[i].Replicas < 1 {
+					topology.Bolts[i].Replicas = 1
+				}
 			}
 		}
 	}

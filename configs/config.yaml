@@ -1,12 +1,16 @@
 # Config
 nimbus:
-  host: 127.0.0.1
+  host: localhost
   port: 8772
+
+redis:
+  host: localhost
+  port: 6379
 
 storm:
   deploy:
-    duration: 10
-    script: "synthetic.sh"
+    duration: 60
+    script: "normal.sh"
     analyze: true
   adaptive:
     time_window_size: 5
@@ -15,7 +19,7 @@ storm:
         number_samples: 12
         upper_limit: 0.7
         lower_limit: 0.3
-        number_replicas: 1
+        number_replicas: 2
       predictive:
         number_samples: 120
         number_replicas: 10

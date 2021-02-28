@@ -40,6 +40,7 @@ func (b *Bolt) CalculateStats() {
 
 func (b *Bolt) calculateQueue() {
 	b.Queue += b.Input - b.Output
+	b.Queue -= int64(math.Floor(0.05 * float64(b.Output)))
 }
 
 func (b *Bolt) calculateUtilization() {

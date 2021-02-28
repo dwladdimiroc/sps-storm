@@ -16,7 +16,7 @@ func planning(stateBolts map[string]int, topology *storm.Topology) {
 		}
 	}
 
-	determineEventLoss(topology)
+	//determineEventLoss(topology)
 }
 
 func addReplicaBolt(nameBolt string, topology *storm.Topology) {

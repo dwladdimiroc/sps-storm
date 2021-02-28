@@ -18,7 +18,7 @@ func execute(topology storm.Topology) {
 }
 
 func parseParamsRebalanced(topology storm.Topology) string {
-	var base = "{\"rebalanceOptions\" : {\"executors\" : {TOPOLOGY_Sfor i, bolt := range topology.Bolts {TORM}}, \"callback\" : \"foo\"}"
+	var base = "{\"rebalanceOptions\" : {\"executors\" : {TOPOLOGY_STORM}}, \"callback\" : \"foo\"}"
 	var executors string
 	for i, bolt := range topology.Bolts {
 		var paramBolt string

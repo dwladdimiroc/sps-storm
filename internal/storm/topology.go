@@ -3,19 +3,21 @@ package storm
 import (
 	"fmt"
 	"github.com/dwladdimiroc/sps-storm/internal/util"
+	"github.com/montanaflynn/stats"
 	"github.com/spf13/viper"
 	"math"
 	"reflect"
 )
 
 type Bolt struct {
-	Name               string  `csv:"name"`
-	Time               int64   `csv:"time"`
-	Replicas           int64   `csv:"replicas"`
-	PredictionReplicas int64   `csv:"prediction_replicas"`
-	Input              int64   `csv:"input"`
-	Output             int64   `csv:"output"`
-	ExecutedTimeAvg    float64 `csv:"executed_time_avg"`
+	Name                   string    `csv:"name"`
+	Time                   int64     `csv:"time"`
+	Replicas               int64     `csv:"replicas"`
+	PredictionReplicas     int64     `csv:"prediction_replicas"`
+	Input                  int64     `csv:"input"`
+	Output                 int64     `csv:"output"`
+	ExecutedTimeAvg        float64   `csv:"executed_time_avg"`
+	ExecutedTimeAvgSamples []float64 `csv:"-"`
 	//TransmitterTimeAvg float64 `csv:"transmitter_time_avg"`
 	LatencyAvg     float64            `csv:"latency_avg"`
 	Utilization    float64            `csv:"utilization"`
@@ -31,6 +33,7 @@ type Bolt struct {
 }
 
 func (b *Bolt) CalculateStats() {
+	b.calculateLatencyMetric()
 	b.calculateQueue()
 	b.calculateUtilization()
 	b.calculateQueueMetric()
@@ -38,9 +41,38 @@ func (b *Bolt) CalculateStats() {
 	b.calculateMetric()
 }
 
+func (b *Bolt) CalculateLatency(samples []float64) {
+	avgSamples, _ := stats.Mean(samples)
+	var limitInf = avgSamples - (avgSamples * 0.1)
+	var limitSup = avgSamples + (avgSamples * 0.1)
+
+	var latency []float64
+	for _, sample := range samples {
+		if limitInf <= sample && sample <= limitSup {
+			latency = append(latency, sample)
+		}
+	}
+
+	b.LatencyAvg, _ = stats.Mean(latency)
+}
+
+func (b *Bolt) calculateLatencyMetric() {
+	if !math.IsNaN(b.LatencyAvg) {
+		b.LatencyAvg = 1 - (b.ExecutedTimeAvg / b.LatencyAvg)
+		if b.LatencyAvg < 0 {
+			b.LatencyAvg = 0
+		}
+	} else {
+		b.LatencyAvg = 0
+	}
+}
+
 func (b *Bolt) calculateQueue() {
 	b.Queue += b.Input - b.Output
 	b.Queue -= int64(math.Floor(0.05 * float64(b.Output)))
+	if b.Queue < 0 {
+		b.Queue = 0
+	}
 }
 
 func (b *Bolt) calculateUtilization() {
@@ -83,10 +115,12 @@ func (b *Bolt) calculateMetric() {
 	b.HistoryMetrics = append(b.HistoryMetrics, b.Metric)
 }
 
-func (b *Bolt) clearStatsTimeWindow() {
+func (b *Bolt) clearStatsTimeWindow(hold bool) {
 	b.Input = 0
 	b.Output = 0
-	b.ExecutedTimeAvg = 0
+	if !hold {
+		b.ExecutedTimeAvg = 0
+	}
 	b.LatencyAvg = 0
 	b.Utilization = 0
 	b.QueueMetric = 0
@@ -94,8 +128,9 @@ func (b *Bolt) clearStatsTimeWindow() {
 }
 
 type Topology struct {
-	Id    string
-	Bolts []Bolt
+	Id        string
+	Benchmark bool
+	Bolts     []Bolt
 }
 
 func (t *Topology) CreateTopology(summaryTopology SummaryTopology) {
@@ -137,6 +172,32 @@ func (t *Topology) CreateTopology(summaryTopology SummaryTopology) {
 
 func (t *Topology) ClearStatsTimeWindow() {
 	for i := range t.Bolts {
-		t.Bolts[i].clearStatsTimeWindow()
+		t.Bolts[i].clearStatsTimeWindow(t.Benchmark)
+	}
+}
+
+func (t *Topology) BenchmarkExecutedTimeAvg() {
+	t.Benchmark = true
+
+	for i := range t.Bolts {
+		var samples []float64
+		for j := range t.Bolts[i].ExecutedTimeAvgSamples {
+			if !math.IsNaN(t.Bolts[i].ExecutedTimeAvgSamples[j]) {
+				samples = append(samples, t.Bolts[i].ExecutedTimeAvgSamples[j])
+			}
+		}
+
+		var normSamples []float64
+		meanSamples, _ := stats.Mean(samples)
+		stdDevSamples, _ := stats.StandardDeviation(samples)
+		upperLimit := meanSamples + stdDevSamples
+		lowerLimit := meanSamples - stdDevSamples
+		for j := range samples {
+			if lowerLimit <= samples[j] && samples[j] <= upperLimit {
+				normSamples = append(normSamples, samples[j])
+			}
+		}
+
+		t.Bolts[i].ExecutedTimeAvg, _ = stats.Mean(normSamples)
 	}
 }

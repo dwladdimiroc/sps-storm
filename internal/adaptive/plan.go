@@ -22,7 +22,9 @@ func planning(stateBolts map[string]int, topology *storm.Topology) {
 func addReplicaBolt(nameBolt string, topology *storm.Topology) {
 	for i := range topology.Bolts {
 		if topology.Bolts[i].Name == nameBolt {
-			topology.Bolts[i].Replicas += viper.GetInt64("storm.adaptive.logical.reactive.number_replicas")
+			if topology.Bolts[i].LatencyAvg < 0.5 {
+				topology.Bolts[i].Replicas += viper.GetInt64("storm.adaptive.logical.reactive.number_replicas")
+			}
 		}
 	}
 }

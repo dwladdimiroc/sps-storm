@@ -21,7 +21,7 @@ func main() {
 	//stats.Collect(NAME_APP, DURATION)
 
 	//Previous deploy
-	previousDeploy()
+	//previousDeploy()
 
 	//Deploy app
 	topologyId := app.Deploy()

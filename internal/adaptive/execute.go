@@ -10,10 +10,10 @@ import (
 )
 
 func execute(topology storm.Topology) {
-	//params := parseParamsRebalanced(topology)
-	//ok := storm.Rebalanced(topology.Id, params)
-	err := updateReplicas(topology)
-	log.Printf("execute: rebalanced topolog %v\n", err)
+	params := parseParamsRebalanced(topology)
+	ok := storm.Rebalanced(topology.Id, params)
+	//err := updateReplicas(topology)
+	log.Printf("execute: rebalanced topolog %v\n", ok)
 	period = 0
 }
 

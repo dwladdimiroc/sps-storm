@@ -10,26 +10,27 @@ import (
 )
 
 type Bolt struct {
-	Name                   string    `csv:"name"`
-	Time                   int64     `csv:"time"`
-	Replicas               int64     `csv:"replicas"`
-	PredictionReplicas     int64     `csv:"prediction_replicas"`
-	Input                  int64     `csv:"input"`
-	Output                 int64     `csv:"output"`
-	ExecutedTimeAvg        float64   `csv:"executed_time_avg"`
-	ExecutedTimeAvgSamples []float64 `csv:"-"`
-	//TransmitterTimeAvg float64 `csv:"transmitter_time_avg"`
-	LatencyAvg     float64            `csv:"latency_avg"`
-	Utilization    float64            `csv:"utilization"`
-	Queue          int64              `csv:"queue"`
-	QueueMetric    float64            `csv:"queue_metric"`
-	EventLoss      int64              `csv:"event_loss"`
-	EventLossAccum int64              `csv:"event_loss_accum"`
-	ExecutedTotal  int64              `csv:"executed_total"`
-	Metric         float64            `csv:"metric"`
-	Location       map[string]float64 `csv:"-"`
-	HistoryMetrics []float64          `csv:"-"`
-	AlertMetrics   []int              `csv:"-"`
+	Name                     string             `csv:"name"`
+	Time                     int64              `csv:"time"`
+	Replicas                 int64              `csv:"replicas"`
+	PredictionReplicas       int64              `csv:"prediction_replicas"`
+	Input                    int64              `csv:"input"`
+	Output                   int64              `csv:"output"`
+	ExecutedTimeAvg          float64            `csv:"executed_time_avg"`
+	ExecutedTimeBenchmarkAvg float64            `csv:"executed_time_benchmark_avg"`
+	ExecutedTimeAvgSamples   []float64          `csv:"-"`
+	LatencyMetric            float64            `csv:"latency_metric"`
+	Utilization              float64            `csv:"utilization"`
+	Queue                    int64              `csv:"queue"`
+	QueueMetric              float64            `csv:"queue_metric"`
+	EventLoss                int64              `csv:"event_loss"`
+	EventLossAccum           int64              `csv:"event_loss_ash ccum"`
+	ExecutedTotal            int64              `csv:"executed_total"`
+	Metric                   float64            `csv:"metric"`
+	CompleteLatency          float64            `csv:"complete_latency"`
+	Location                 map[string]float64 `csv:"-"`
+	HistoryMetrics           []float64          `csv:"-"`
+	AlertMetrics             []int              `csv:"-"`
 }
 
 func (b *Bolt) CalculateStats() {
@@ -41,29 +42,14 @@ func (b *Bolt) CalculateStats() {
 	b.calculateMetric()
 }
 
-func (b *Bolt) CalculateLatency(samples []float64) {
-	avgSamples, _ := stats.Mean(samples)
-	var limitInf = avgSamples - (avgSamples * 0.1)
-	var limitSup = avgSamples + (avgSamples * 0.1)
-
-	var latency []float64
-	for _, sample := range samples {
-		if limitInf <= sample && sample <= limitSup {
-			latency = append(latency, sample)
-		}
-	}
-
-	b.LatencyAvg, _ = stats.Mean(latency)
-}
-
 func (b *Bolt) calculateLatencyMetric() {
-	if !math.IsNaN(b.LatencyAvg) {
-		b.LatencyAvg = 1 - (b.ExecutedTimeAvg / b.LatencyAvg)
-		if b.LatencyAvg < 0 {
-			b.LatencyAvg = 0
+	if !math.IsNaN(b.ExecutedTimeAvg) {
+		b.LatencyMetric = 1 - (b.ExecutedTimeAvg / b.ExecutedTimeBenchmarkAvg)
+		if b.LatencyMetric < 0 {
+			b.LatencyMetric = 0
 		}
 	} else {
-		b.LatencyAvg = 0
+		b.LatencyMetric = 0
 	}
 }
 
@@ -110,7 +96,7 @@ func (b *Bolt) calculatePredictionReplicas() {
 func (b *Bolt) calculateMetric() {
 	b.Time += 5
 	b.Metric = viper.GetFloat64("storm.adaptive.logical.metric.throughput_weight")*b.Utilization +
-		viper.GetFloat64("storm.adaptive.logical.metric.latency_weight")*b.LatencyAvg +
+		viper.GetFloat64("storm.adaptive.logical.metric.latency_weight")*b.LatencyMetric +
 		viper.GetFloat64("storm.adaptive.logical.metric.queue_weight")*b.QueueMetric
 	b.HistoryMetrics = append(b.HistoryMetrics, b.Metric)
 }
@@ -118,10 +104,10 @@ func (b *Bolt) calculateMetric() {
 func (b *Bolt) clearStatsTimeWindow(hold bool) {
 	b.Input = 0
 	b.Output = 0
-	if !hold {
+	if hold {
 		b.ExecutedTimeAvg = 0
 	}
-	b.LatencyAvg = 0
+	b.LatencyMetric = 0
 	b.Utilization = 0
 	b.QueueMetric = 0
 	b.Metric = 0
@@ -198,6 +184,6 @@ func (t *Topology) BenchmarkExecutedTimeAvg() {
 			}
 		}
 
-		t.Bolts[i].ExecutedTimeAvg, _ = stats.Mean(normSamples)
+		t.Bolts[i].ExecutedTimeBenchmarkAvg, _ = stats.Mean(normSamples)
 	}
 }

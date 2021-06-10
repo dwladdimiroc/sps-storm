@@ -23,8 +23,6 @@ type Bolt struct {
 	Utilization              float64            `csv:"utilization"`
 	Queue                    int64              `csv:"queue"`
 	QueueMetric              float64            `csv:"queue_metric"`
-	EventLoss                int64              `csv:"event_loss"`
-	EventLossAccum           int64              `csv:"event_loss_ash ccum"`
 	ExecutedTotal            int64              `csv:"executed_total"`
 	Metric                   float64            `csv:"metric"`
 	CompleteLatency          float64            `csv:"complete_latency"`

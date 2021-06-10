@@ -44,7 +44,7 @@ func (b *Bolt) CalculateStats() {
 
 func (b *Bolt) calculateLatencyMetric() {
 	if !math.IsNaN(b.ExecutedTimeAvg) {
-		b.LatencyMetric = 1 - (b.ExecutedTimeAvg / b.ExecutedTimeBenchmarkAvg)
+		b.LatencyMetric = 1 - (b.ExecutedTimeBenchmarkAvg / b.ExecutedTimeAvg)
 		if b.LatencyMetric < 0 {
 			b.LatencyMetric = 0
 		}
@@ -101,12 +101,10 @@ func (b *Bolt) calculateMetric() {
 	b.HistoryMetrics = append(b.HistoryMetrics, b.Metric)
 }
 
-func (b *Bolt) clearStatsTimeWindow(hold bool) {
+func (b *Bolt) clearStatsTimeWindow() {
 	b.Input = 0
 	b.Output = 0
-	if hold {
-		b.ExecutedTimeAvg = 0
-	}
+	b.ExecutedTimeAvg = 0
 	b.LatencyMetric = 0
 	b.Utilization = 0
 	b.QueueMetric = 0
@@ -158,7 +156,7 @@ func (t *Topology) CreateTopology(summaryTopology SummaryTopology) {
 
 func (t *Topology) ClearStatsTimeWindow() {
 	for i := range t.Bolts {
-		t.Bolts[i].clearStatsTimeWindow(t.Benchmark)
+		t.Bolts[i].clearStatsTimeWindow()
 	}
 }
 

@@ -106,40 +106,15 @@ func updateExecutedAvg(topology *storm.Topology, boltApi storm.BoltMetric) {
 }
 
 func updateInputBolt(bolt *storm.Bolt, api storm.MetricsAPI) {
-	var inputBolt []string
-
 	for _, boltApi := range api.Bolts {
-		if boltApi.ID == bolt.Name {
-			for _, executed := range boltApi.Executed {
-				inputBolt = append(inputBolt, executed.ComponentID)
+		for _, emitted := range boltApi.Emitted {
+			if emitted.StreamID == bolt.Name {
+				bolt.Input += int64(emitted.Value)
 			}
+
 		}
 	}
 
-	var split int64
-	for _, input := range inputBolt {
-		for _, boltApi := range api.Bolts {
-			for _, executed := range boltApi.Executed {
-				if executed.ComponentID == input {
-					split++
-				}
-			}
-		}
-	}
-
-	for _, input := range inputBolt {
-		for _, boltApi := range api.Bolts {
-			if boltApi.ID == input {
-				for _, executed := range boltApi.Executed {
-					bolt.Input += int64(executed.Value)
-				}
-			}
-		}
-	}
-
-	if split != 0 {
-		bolt.Input /= split
-	}
 }
 
 func saveMetrics(topology storm.Topology) {

@@ -9,8 +9,7 @@ import (
 
 func execute(topology storm.Topology) {
 	err := updateReplicas(topology)
-	log.Printf("execute: rebalanced topolog %v\n", err)
-	period = 0
+	log.Printf("execute: rebalanced topology %v\n", err)
 }
 
 func updateReplicas(topology storm.Topology) error {

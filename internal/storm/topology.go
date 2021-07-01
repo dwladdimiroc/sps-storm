@@ -43,13 +43,17 @@ func (b *Bolt) CalculateStats() {
 }
 
 func (b *Bolt) calculateLatencyMetric() {
-	if !math.IsNaN(b.ExecutedTimeAvg) {
-		b.LatencyMetric = 1 - (b.ExecutedTimeBenchmarkAvg / b.ExecutedTimeAvg)
-		if b.LatencyMetric < 0 {
+	if b.ExecutedTimeBenchmarkAvg == 0 {
+		b.LatencyMetric = 0
+	} else {
+		if !math.IsNaN(b.ExecutedTimeAvg) {
+			b.LatencyMetric = 1 - (b.ExecutedTimeBenchmarkAvg / b.ExecutedTimeAvg)
+			if b.LatencyMetric < 0 {
+				b.LatencyMetric = 0
+			}
+		} else {
 			b.LatencyMetric = 0
 		}
-	} else {
-		b.LatencyMetric = 0
 	}
 }
 

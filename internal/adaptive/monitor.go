@@ -116,16 +116,29 @@ func updateInputBolt(bolt *storm.Bolt, api storm.MetricsAPI) {
 		}
 	}
 
+	var split int64
+	for _, input := range inputBolt {
+		for _, boltApi := range api.Bolts {
+			for _, executed := range boltApi.Executed {
+				if executed.ComponentID == input {
+					split++
+				}
+			}
+		}
+	}
+
 	for _, input := range inputBolt {
 		for _, boltApi := range api.Bolts {
 			if boltApi.ID == input {
 				for _, executed := range boltApi.Executed {
-					if executed.StreamID == bolt.Name {
-						bolt.Input += int64(executed.Value)
-					}
+					bolt.Input += int64(executed.Value)
 				}
 			}
 		}
+	}
+
+	if split != 0 {
+		bolt.Input /= split
 	}
 }
 

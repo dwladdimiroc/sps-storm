@@ -10,27 +10,27 @@ import (
 )
 
 type Bolt struct {
-	Name                     string             `csv:"name"`
-	Time                     int64              `csv:"time"`
-	Replicas                 int64              `csv:"replicas"`
-	PredictionReplicas       int64              `csv:"prediction_replicas"`
-	Input                    int64              `csv:"input"`
-	Output                   int64              `csv:"output"`
-	ExecutedTimeAvg          float64            `csv:"executed_time_avg"`
-	ExecutedTimeBenchmarkAvg float64            `csv:"executed_time_benchmark_avg"`
-	ExecutedTimeAvgSamples   []float64          `csv:"-"`
-	LatencyMetric            float64            `csv:"latency_metric"`
-	Utilization              float64            `csv:"utilization"`
-	Queue                    int64              `csv:"queue"`
-	QueueMetric              float64            `csv:"queue_metric"`
-	EventLoss                int64              `csv:"event_loss"`
-	EventLossAccum           int64              `csv:"event_loss_ash ccum"`
-	ExecutedTotal            int64              `csv:"executed_total"`
-	Metric                   float64            `csv:"metric"`
-	CompleteLatency          float64            `csv:"complete_latency"`
-	Location                 map[string]float64 `csv:"-"`
-	HistoryMetrics           []float64          `csv:"-"`
-	AlertMetrics             []int              `csv:"-"`
+	Name                     string    `csv:"name"`
+	Time                     int64     `csv:"time"`
+	Replicas                 int64     `csv:"replicas"`
+	PredictionReplicas       int64     `csv:"prediction_replicas"`
+	Input                    int64     `csv:"input"`
+	Output                   int64     `csv:"output"`
+	ExecutedTimeAvg          float64   `csv:"executed_time_avg"`
+	ExecutedTimeBenchmarkAvg float64   `csv:"executed_time_benchmark_avg"`
+	ExecutedTimeAvgSamples   []float64 `csv:"-"`
+	LatencyMetric            float64   `csv:"latency_metric"`
+	Utilization              float64   `csv:"utilization"`
+	Queue                    int64     `csv:"queue"`
+	QueueMetric              float64   `csv:"queue_metric"`
+	//EventLoss                int64              `csv:"event_loss"`
+	//EventLossAccum           int64              `csv:"event_loss_ash ccum"`
+	ExecutedTotal   int64              `csv:"executed_total"`
+	Metric          float64            `csv:"metric"`
+	CompleteLatency float64            `csv:"complete_latency"`
+	Location        map[string]float64 `csv:"-"`
+	HistoryMetrics  []float64          `csv:"-"`
+	AlertMetrics    []int              `csv:"-"`
 }
 
 func (b *Bolt) CalculateStats() {

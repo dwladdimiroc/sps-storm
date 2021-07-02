@@ -69,7 +69,13 @@ func (b *Bolt) calculateUtilization() {
 	if math.IsNaN(b.ExecutedTimeAvg) {
 		b.Utilization = 0
 	} else {
-		b.Utilization = (b.ExecutedTimeAvg * float64(b.Output)) / (float64(b.Replicas * int64(viper.GetInt("storm.adaptive.time_window_size")) * util.SECS))
+		var executedAvg float64
+		if b.ExecutedTimeAvg < b.ExecutedTimeBenchmarkAvg {
+			executedAvg = b.ExecutedTimeBenchmarkAvg
+		} else {
+			executedAvg = b.ExecutedTimeAvg
+		}
+		b.Utilization = (executedAvg * float64(b.Output)) / (float64(b.Replicas * int64(viper.GetInt("storm.adaptive.time_window_size")) * util.SECS))
 	}
 }
 
@@ -109,7 +115,7 @@ func (b *Bolt) clearStatsTimeWindow() {
 	b.Input = 0
 	b.Output = 0
 	b.ExecutedTimeAvg = 0
-	b.LatencyMetric = 0
+	//b.LatencyMetric = 0
 	b.Utilization = 0
 	b.QueueMetric = 0
 	b.Metric = 0

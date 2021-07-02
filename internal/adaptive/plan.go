@@ -23,7 +23,7 @@ func addReplicaBolt(nameBolt string, topology *storm.Topology) {
 			if viper.GetFloat64("storm.adaptive.logical.metric.latency_weight") == 0 {
 				topology.Bolts[i].Replicas += viper.GetInt64("storm.adaptive.logical.reactive.number_replicas")
 			} else {
-				if topology.Bolts[i].LatencyMetric < 0.5 {
+				if topology.Bolts[i].LatencyMetric < viper.GetFloat64("storm.adaptive.logical.metric.latency_limit") {
 					topology.Bolts[i].Replicas += viper.GetInt64("storm.adaptive.logical.reactive.number_replicas")
 				}
 			}

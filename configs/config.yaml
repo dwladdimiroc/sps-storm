@@ -10,15 +10,15 @@ redis:
 storm:
   deploy:
     duration: 65
-    script: "normal.sh"
+    script: "app-2.sh"
     analyze: true
   adaptive:
     time_window_size: 5
     logical:
       benchmark:
-        number_samples: 11
-      reactive:
         number_samples: 12
+      reactive:
+        number_samples: 5
         upper_limit: 0.7
         lower_limit: 0.3
         number_replicas: 1
@@ -28,5 +28,6 @@ storm:
       metric:
         throughput_weight: 0.45
         latency_weight: 0.1
+        latency_limit: 0.5
         queue_weight: 0.45
   csv: "stats/"

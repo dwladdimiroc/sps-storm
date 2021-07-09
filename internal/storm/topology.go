@@ -75,7 +75,11 @@ func (b *Bolt) calculateUtilization() {
 		} else {
 			executedAvg = b.ExecutedTimeAvg
 		}
+		//b.Utilization = (b.ExecutedTimeBenchmarkAvg * float64(b.Output)) / (float64(b.Replicas * int64(viper.GetInt("storm.adaptive.time_window_size")) * util.SECS))
 		b.Utilization = (executedAvg * float64(b.Output)) / (float64(b.Replicas * int64(viper.GetInt("storm.adaptive.time_window_size")) * util.SECS))
+		if b.Utilization > 1 {
+			b.Utilization = 1
+		}
 	}
 }
 

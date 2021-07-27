@@ -10,25 +10,27 @@ import (
 )
 
 type Bolt struct {
-	Name                     string             `csv:"name"`
-	Time                     int64              `csv:"time"`
-	Replicas                 int64              `csv:"replicas"`
-	PredictionReplicas       int64              `csv:"prediction_replicas"`
-	Input                    int64              `csv:"input"`
-	Output                   int64              `csv:"output"`
-	ExecutedTimeAvg          float64            `csv:"executed_time_avg"`
-	ExecutedTimeBenchmarkAvg float64            `csv:"executed_time_benchmark_avg"`
-	ExecutedTimeAvgSamples   []float64          `csv:"-"`
-	LatencyMetric            float64            `csv:"latency_metric"`
-	Utilization              float64            `csv:"utilization"`
-	Queue                    int64              `csv:"queue"`
-	QueueMetric              float64            `csv:"queue_metric"`
-	ExecutedTotal            int64              `csv:"executed_total"`
-	Metric                   float64            `csv:"metric"`
-	CompleteLatency          float64            `csv:"complete_latency"`
-	Location                 map[string]float64 `csv:"-"`
-	HistoryMetrics           []float64          `csv:"-"`
-	AlertMetrics             []int              `csv:"-"`
+	Name                     string    `csv:"name"`
+	Time                     int64     `csv:"time"`
+	Replicas                 int64     `csv:"replicas"`
+	PredictionReplicas       int64     `csv:"prediction_replicas"`
+	Input                    int64     `csv:"input"`
+	Output                   int64     `csv:"output"`
+	ExecutedTimeAvg          float64   `csv:"executed_time_avg"`
+	ExecutedTimeBenchmarkAvg float64   `csv:"executed_time_benchmark_avg"`
+	ExecutedTimeAvgSamples   []float64 `csv:"-"`
+	LatencyMetric            float64   `csv:"latency_metric"`
+	Utilization              float64   `csv:"utilization"`
+	Queue                    int64     `csv:"queue"`
+	QueueMetric              float64   `csv:"queue_metric"`
+	//EventLoss                int64              `csv:"event_loss"`
+	//EventLossAccum           int64              `csv:"event_loss_ash ccum"`
+	ExecutedTotal   int64              `csv:"executed_total"`
+	Metric          float64            `csv:"metric"`
+	CompleteLatency float64            `csv:"complete_latency"`
+	Location        map[string]float64 `csv:"-"`
+	HistoryMetrics  []float64          `csv:"-"`
+	AlertMetrics    []int              `csv:"-"`
 }
 
 func (b *Bolt) CalculateStats() {
@@ -41,13 +43,17 @@ func (b *Bolt) CalculateStats() {
 }
 
 func (b *Bolt) calculateLatencyMetric() {
-	if !math.IsNaN(b.ExecutedTimeAvg) {
-		b.LatencyMetric = 1 - (b.ExecutedTimeBenchmarkAvg / b.ExecutedTimeAvg)
-		if b.LatencyMetric < 0 {
+	if b.ExecutedTimeBenchmarkAvg == 0 {
+		b.LatencyMetric = 0
+	} else {
+		if !math.IsNaN(b.ExecutedTimeAvg) {
+			b.LatencyMetric = 1 - (b.ExecutedTimeBenchmarkAvg / b.ExecutedTimeAvg)
+			if b.LatencyMetric < 0 {
+				b.LatencyMetric = 0
+			}
+		} else {
 			b.LatencyMetric = 0
 		}
-	} else {
-		b.LatencyMetric = 0
 	}
 }
 
@@ -63,7 +69,17 @@ func (b *Bolt) calculateUtilization() {
 	if math.IsNaN(b.ExecutedTimeAvg) {
 		b.Utilization = 0
 	} else {
-		b.Utilization = (b.ExecutedTimeAvg * float64(b.Output)) / (float64(b.Replicas * int64(viper.GetInt("storm.adaptive.time_window_size")) * util.SECS))
+		var executedAvg float64
+		if b.ExecutedTimeAvg < b.ExecutedTimeBenchmarkAvg {
+			executedAvg = b.ExecutedTimeBenchmarkAvg
+		} else {
+			executedAvg = b.ExecutedTimeAvg
+		}
+		//b.Utilization = (b.ExecutedTimeBenchmarkAvg * float64(b.Output)) / (float64(b.Replicas * int64(viper.GetInt("storm.adaptive.time_window_size")) * util.SECS))
+		b.Utilization = (executedAvg * float64(b.Output)) / (float64(b.Replicas * int64(viper.GetInt("storm.adaptive.time_window_size")) * util.SECS))
+		if b.Utilization > 1 {
+			b.Utilization = 1
+		}
 	}
 }
 
@@ -103,7 +119,7 @@ func (b *Bolt) clearStatsTimeWindow() {
 	b.Input = 0
 	b.Output = 0
 	b.ExecutedTimeAvg = 0
-	b.LatencyMetric = 0
+	//b.LatencyMetric = 0
 	b.Utilization = 0
 	b.QueueMetric = 0
 	b.Metric = 0

@@ -92,11 +92,12 @@ func updateExecutedAvg(topology *storm.Topology, boltApi storm.BoltMetric) {
 			for _, executed := range boltApi.Executed {
 				for _, executedMsAvg := range boltApi.ExecutedMsAvg {
 					if executed.ComponentID == executedMsAvg.ComponentID {
-						topology.Bolts[i].ExecutedTimeAvg = (executed.Value * executedMsAvg.ValueFloat) + topology.Bolts[i].ExecutedTimeAvg
+						//topology.Bolts[i].ExecutedTimeAvg = (executed.Value * executedMsAvg.ValueFloat) + topology.Bolts[i].ExecutedTimeAvg
+						topology.Bolts[i].ExecutedTimeAvg = executedMsAvg.ValueFloat
 					}
 				}
 			}
-			topology.Bolts[i].ExecutedTimeAvg = topology.Bolts[i].ExecutedTimeAvg / float64(topology.Bolts[i].Output)
+			//topology.Bolts[i].ExecutedTimeAvg = topology.Bolts[i].ExecutedTimeAvg / float64(topology.Bolts[i].Output)
 			if !topology.Benchmark {
 				topology.Bolts[i].ExecutedTimeAvgSamples = append(topology.Bolts[i].ExecutedTimeAvgSamples, topology.Bolts[i].ExecutedTimeAvg)
 			}
@@ -105,24 +106,15 @@ func updateExecutedAvg(topology *storm.Topology, boltApi storm.BoltMetric) {
 }
 
 func updateInputBolt(bolt *storm.Bolt, api storm.MetricsAPI) {
-	var inputBolt []string
 	for _, boltApi := range api.Bolts {
-		if boltApi.ID == bolt.Name {
-			for _, executed := range boltApi.Executed {
-				inputBolt = append(inputBolt, executed.ComponentID)
+		for _, emitted := range boltApi.Emitted {
+			if emitted.StreamID == bolt.Name {
+				bolt.Input += int64(emitted.Value)
 			}
+
 		}
 	}
 
-	for _, input := range inputBolt {
-		for _, boltApi := range api.Bolts {
-			if boltApi.ID == input {
-				for _, executed := range boltApi.Executed {
-					bolt.Input += int64(executed.Value)
-				}
-			}
-		}
-	}
 }
 
 func saveMetrics(topology storm.Topology) {

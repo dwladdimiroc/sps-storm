@@ -38,6 +38,7 @@ func updateStatsInputStream(topology *storm.Topology, api storm.MetricsAPI) {
 				if spout.ID == executed.ComponentID {
 					for _, transferred := range spout.Emitted {
 						if transferred.StreamID == executed.StreamID {
+							topology.InputRate = int64(transferred.Value)
 							for i := range topology.Bolts {
 								if bolt.ID == topology.Bolts[i].Name {
 									topology.Bolts[i].Input = int64(transferred.Value)

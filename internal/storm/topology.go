@@ -128,6 +128,7 @@ func (b *Bolt) clearStatsTimeWindow() {
 type Topology struct {
 	Id        string
 	Benchmark bool
+	InputRate int64
 	Bolts     []Bolt
 }
 

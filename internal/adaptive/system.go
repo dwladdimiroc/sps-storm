@@ -30,12 +30,14 @@ func Start(limit time.Duration) {
 func adaptiveSystem(topology *storm.Topology) {
 	if ok := monitor(topology.Id, topology); ok {
 		if viper.GetBool("storm.deploy.analyze") {
-			if stateBolts := analyze(topology); len(stateBolts) > 0 {
-				planning(stateBolts, topology)
+			if period%viper.GetInt("storm.adaptive.logical.reactive.number_samples") == 0 {
+				//analyze(topology)
+				planning(topology)
 				execute(*topology)
 			}
 		}
 	}
+	topology.ClearStatsTimeWindow()
 }
 
 func Stop() {

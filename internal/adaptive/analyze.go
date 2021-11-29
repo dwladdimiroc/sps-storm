@@ -11,9 +11,7 @@ import (
 func analyze(topology *storm.Topology) map[string]int {
 	var stateBolts map[string]int
 	log.Printf("analyze: period %v\n", period)
-	if period%viper.GetInt("storm.adaptive.logical.predictive.number_samples") == 0 {
-		//
-	} else if period%viper.GetInt("storm.adaptive.logical.reactive.number_samples") == 0 {
+	if period%viper.GetInt("storm.adaptive.logical.reactive.number_samples") == 0 {
 		stateBolts = analyzeReactiveLogical(topology)
 	}
 

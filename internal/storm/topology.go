@@ -126,10 +126,11 @@ func (b *Bolt) clearStatsTimeWindow() {
 }
 
 type Topology struct {
-	Id        string
-	Benchmark bool
-	InputRate int64
-	Bolts     []Bolt
+	Id               string
+	Benchmark        bool
+	InputRate        int64
+	HistoryInputRate []int64
+	Bolts            []Bolt
 }
 
 func (t *Topology) CreateTopology(summaryTopology SummaryTopology) {

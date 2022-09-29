@@ -49,6 +49,8 @@ func updateStatsInputStream(topology *storm.Topology, api storm.MetricsAPI) {
 			}
 		}
 	}
+
+	topology.HistoryInputRate = append(topology.HistoryInputRate, topology.InputRate)
 }
 
 func updateCompleteLatency(topology *storm.Topology, api storm.MetricsAPI) {

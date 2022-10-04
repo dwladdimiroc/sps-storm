@@ -14,7 +14,7 @@ func monitor(topologyId string, topology *storm.Topology) bool {
 		updateTopology(topology, metricsApi)
 		saveMetrics(*topology)
 		period++
-		if !topology.Benchmark && period == viper.GetInt("storm.adaptive.logical.benchmark.number_samples") {
+		if !topology.Benchmark && period == viper.GetInt("storm.adaptive.benchmark_samples") {
 			topology.BenchmarkExecutedTimeAvg()
 		}
 		return ok
@@ -50,7 +50,7 @@ func updateStatsInputStream(topology *storm.Topology, api storm.MetricsAPI) {
 		}
 	}
 
-	topology.HistoryInputRate = append(topology.HistoryInputRate, topology.InputRate)
+	topology.AddSample(topology.InputRate, period)
 }
 
 func updateCompleteLatency(topology *storm.Topology, api storm.MetricsAPI) {
@@ -73,7 +73,6 @@ func updateStatsBolt(topology *storm.Topology, api storm.MetricsAPI) {
 
 	for i := range topology.Bolts {
 		updateInputBolt(&topology.Bolts[i], api)
-		topology.Bolts[i].CalculateStats()
 	}
 }
 
@@ -113,10 +112,8 @@ func updateInputBolt(bolt *storm.Bolt, api storm.MetricsAPI) {
 			if emitted.StreamID == bolt.Name {
 				bolt.Input += int64(emitted.Value)
 			}
-
 		}
 	}
-
 }
 
 func saveMetrics(topology storm.Topology) {

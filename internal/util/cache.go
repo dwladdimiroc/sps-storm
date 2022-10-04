@@ -7,7 +7,7 @@ import (
 	"log"
 )
 
-func RedisFlush() error {
+func RedisFlush() (string, error) {
 	host := viper.GetString("redis.host")
 	port := viper.GetString("redis.port")
 	addr := host + ":" + port
@@ -20,10 +20,10 @@ func RedisFlush() error {
 	ctx := context.Background()
 	defer ctx.Done()
 	if val, err := rdb.FlushAll(ctx).Result(); err != nil {
-		return err
+		return val, err
 	} else {
 		log.Printf("redis flushall: %v\n", val)
-		return nil
+		return val, nil
 	}
 }
 

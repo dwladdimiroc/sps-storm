@@ -13,7 +13,7 @@ var schedulerAdaptive *gocron.Scheduler
 
 func Init(topologyId string) {
 	topology = new(storm.Topology)
-	topology.Id = topologyId
+	topology.Init(topologyId)
 	summaryTopology := storm.GetSummaryTopology(topology.Id)
 	topology.CreateTopology(summaryTopology)
 	schedulerAdaptive = gocron.NewScheduler()
@@ -21,7 +21,7 @@ func Init(topologyId string) {
 
 func Start(limit time.Duration) {
 	go func(schedulerAdaptive *gocron.Scheduler) {
-		schedulerAdaptive.Every(uint64(viper.GetInt("storm.adaptive.time_window_size"))).Seconds().Do(adaptiveSystem, topology)
+		schedulerAdaptive.Every(uint64(viper.GetInt("storm.adaptive.benchmark_samples"))).Seconds().Do(adaptiveSystem, topology)
 		<-schedulerAdaptive.Start()
 	}(schedulerAdaptive)
 	time.Sleep(limit)
@@ -30,10 +30,10 @@ func Start(limit time.Duration) {
 func adaptiveSystem(topology *storm.Topology) {
 	if ok := monitor(topology.Id, topology); ok {
 		if viper.GetBool("storm.deploy.analyze") {
-			if period%viper.GetInt("storm.adaptive.logical.reactive.number_samples") == 0 {
-				//analyze(topology)
-				planning(topology)
-				execute(*topology)
+			if period%viper.GetInt("storm.adaptive.prediction_samples") == 0 {
+				analyze(topology)
+				//planning(topology)
+				//execute(*topology)
 			}
 		}
 	}

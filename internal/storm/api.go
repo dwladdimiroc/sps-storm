@@ -1,12 +1,10 @@
 package storm
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"github.com/spf13/viper"
-	"io/ioutil"
-	"log"
+	"io"
 	"net/http"
 	"strconv"
 	"strings"
@@ -58,7 +56,7 @@ func GetTopologyId() string {
 	if res, err := http.Get(nimbusSummaryTopologies); err != nil {
 		fmt.Printf("storm get summary topologies: %v\n", err)
 	} else {
-		data, _ := ioutil.ReadAll(res.Body)
+		data, _ := io.ReadAll(res.Body)
 		if err := res.Body.Close(); err != nil {
 			fmt.Printf("storm get summary topologies: %v\n", err)
 		} else {
@@ -151,7 +149,7 @@ func GetMetrics(topologyId string) (bool, MetricsAPI) {
 	if res, err := http.Get(nimbusMetricsApiUrl); err != nil {
 		fmt.Printf("storm get metrics: %v\n", err)
 	} else {
-		data, _ := ioutil.ReadAll(res.Body)
+		data, _ := io.ReadAll(res.Body)
 		if err := res.Body.Close(); err != nil {
 			fmt.Printf("storm get metrics: %v\n", err)
 		} else {
@@ -191,7 +189,7 @@ func GetSummaryTopology(topologyId string) SummaryTopology {
 	if res, err := http.Get(nimbusSummaryTopologyURL); err != nil {
 		fmt.Printf("storm get summary topology: %v\n", err)
 	} else {
-		data, _ := ioutil.ReadAll(res.Body)
+		data, _ := io.ReadAll(res.Body)
 		if err := res.Body.Close(); err != nil {
 			fmt.Printf("storm get summary topology: %v\n", err)
 		} else {
@@ -206,19 +204,5 @@ func GetSummaryTopology(topologyId string) SummaryTopology {
 	} else {
 		time.Sleep(1 * time.Second)
 		return GetSummaryTopology(topologyId)
-	}
-}
-
-func Rebalanced(topologyId, params string) bool {
-	nimbusRebalanced := parseURL(NimbusRebalancedBaseURL, topologyId)
-	if resp, err := http.Post(nimbusRebalanced, "application/json", bytes.NewBuffer([]byte(params))); err != nil {
-		log.Fatal(err)
-		return false
-	} else {
-		if resp.StatusCode == 200 {
-			return true
-		} else {
-			return false
-		}
 	}
 }

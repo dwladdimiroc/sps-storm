@@ -1,83 +1,55 @@
 package adaptive
 
 import (
-	"fmt"
 	"github.com/dwladdimiroc/sps-storm/internal/storm"
+	"github.com/dwladdimiroc/sps-storm/internal/util"
 	"github.com/montanaflynn/stats"
 	"github.com/spf13/viper"
 	"log"
+	"math"
 )
 
-func analyze(topology *storm.Topology) map[string]int {
-	var stateBolts map[string]int
+func analyze(topology *storm.Topology) {
 	log.Printf("analyze: period %v\n", period)
-	if period%viper.GetInt("storm.adaptive.logical.reactive.number_samples") == 0 {
-		stateBolts = analyzeReactiveLogical(topology)
+	input := predictionInput(topology)
+	log.Printf("input predicted: %d\n", input)
+	for i := range topology.Bolts {
+		topology.Bolts[i].PredictionReplicas = predictionReplicas(input, topology.Bolts[i])
+		log.Printf("bolt %d prediction %d", i, topology.Bolts[i].PredictionReplicas)
 	}
-
-	return stateBolts
 }
 
-func analyzeReactiveLogical(topology *storm.Topology) map[string]int {
-	var stateBolts = make(map[string]int)
-	for _, bolt := range topology.Bolts {
-		if len(bolt.HistoryMetrics) >= viper.GetInt("storm.adaptive.logical.reactive.number_samples") {
-			stateBolts[bolt.Name] = analyzeHistoryBolt(bolt.Name, bolt.HistoryMetrics)
-		}
-	}
-	return stateBolts
-}
-
-func getHistoryBolt(metrics []float64, numberSamples int) []float64 {
-	lastSamples := len(metrics) - 1
-	var data = make([]float64, numberSamples)
-
-	for i := 0; i < numberSamples; i++ {
-		index := lastSamples - i
-		data[i] = metrics[index]
+func predictionInput(topology *storm.Topology) int64 {
+	if err := topology.InputRegression.Run(); err != nil {
+		log.Printf("error predictive input: %v\n", err)
 	}
 
-	var dataNorm []float64
-	if stdDev, err := stats.StandardDeviation(data); err != nil {
-		fmt.Printf("error get history bolt: %v\n", err)
-	} else {
-		if mean, err := stats.Mean(data); err != nil {
-			fmt.Printf("error get history bolt: %v\n", err)
+	var predInput []float64
+	for i := 1; i <= viper.GetInt("storm.adaptive.prediction_samples"); i++ {
+		if sample, err := topology.InputRegression.Predict([]float64{float64(period + i)}); err != nil {
+			log.Printf("error predictive input: %v\n", err)
 		} else {
-			limitUpper := mean + stdDev
-			limitLower := mean - stdDev
-			for i := range data {
-				if limitUpper >= data[i] && data[i] >= limitLower {
-					dataNorm = append(dataNorm, data[i])
-				}
-			}
+			predInput = append(predInput, sample)
 		}
 	}
-
-	return dataNorm
-}
-
-func analyzeHistoryBolt(name string, metrics []float64) int {
-	historyBolt := getHistoryBolt(metrics, viper.GetInt("storm.adaptive.logical.reactive.number_samples"))
-	if metric, err := stats.Mean(historyBolt); err != nil {
-		fmt.Printf("error analyze history bolt %s: {mertrics: %v, error: %v}\n", name, metrics, err)
-		return -2
+	if input, err := stats.Mean(predInput); err != nil {
+		log.Printf("error mean input: %v\n", err)
+		return 0
 	} else {
-		var analyzeReactive = analyzeState(metric)
-		return analyzeReactive
+		return int64(math.Floor(input))
 	}
 }
 
-func analyzePredictiveLogical() {
-
+func predictionReplicas(input int64, bolt storm.Bolt) int64 {
+	executedTimeAvg := chooseExecutedTime(bolt)
+	replicasPredictive := (float64(input) * executedTimeAvg) / (float64(int64(viper.GetInt("storm.adaptive.time_window_size")) * util.SECS))
+	return int64(replicasPredictive)
 }
 
-func analyzeState(metric float64) int {
-	if metric >= viper.GetFloat64("storm.adaptive.logical.reactive.upper_limit") {
-		return 1
-	} else if metric <= viper.GetFloat64("storm.adaptive.logical.reactive.lower_limit") {
-		return -1
+func chooseExecutedTime(bolt storm.Bolt) float64 {
+	if bolt.ExecutedTimeBenchmarkAvg > bolt.ExecutedTimeAvg {
+		return bolt.ExecutedTimeBenchmarkAvg
 	} else {
-		return 0
+		return bolt.ExecutedTimeAvg
 	}
 }

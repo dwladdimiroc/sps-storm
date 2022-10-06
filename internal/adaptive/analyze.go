@@ -15,6 +15,7 @@ func analyze(topology *storm.Topology) {
 	log.Printf("input predicted: %d\n", input)
 	for i := range topology.Bolts {
 		topology.Bolts[i].PredictionReplicas = predictionReplicas(input, topology.Bolts[i])
+		log.Printf("[Analyze] Bolt={%s},Prediction={%d}", topology.Bolts[i].Name, topology.Bolts[i].PredictionReplicas)
 	}
 }
 
@@ -35,14 +36,13 @@ func predictionInput(topology *storm.Topology) int64 {
 		log.Printf("error mean input: %v\n", err)
 		return 0
 	} else {
-		return int64(math.Floor(input))
+		return int64(math.Ceil(input))
 	}
 }
 
 func predictionReplicas(input int64, bolt storm.Bolt) int64 {
 	executedTimeAvg := chooseExecutedTime(bolt)
 	replicasPredictive := (float64(input) * executedTimeAvg) / (float64(int64(viper.GetInt("storm.adaptive.time_window_size")) * util.SECS))
-	log.Printf("bolt %s prediction %0.0f exectavg %0.2f", bolt.Name, replicasPredictive, executedTimeAvg)
 	return int64(replicasPredictive)
 }
 

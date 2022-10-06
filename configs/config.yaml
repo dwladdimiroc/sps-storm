@@ -16,4 +16,5 @@ storm:
     time_window_size: 5
     benchmark_samples: 12
     prediction_samples: 6
+    limit_replicas: 100
   csv: "stats/"

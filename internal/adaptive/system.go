@@ -32,8 +32,8 @@ func adaptiveSystem(topology *storm.Topology) {
 		if viper.GetBool("storm.deploy.analyze") {
 			if period%viper.GetInt("storm.adaptive.prediction_samples") == 0 {
 				analyze(topology)
-				//planning(topology)
-				//execute(*topology)
+				planning(topology)
+				execute(*topology)
 			}
 		}
 	}

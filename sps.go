@@ -22,7 +22,4 @@ func main() {
 	adaptive.Init(topologyId)
 	adaptive.Start(time.Duration(viper.GetInt("storm.deploy.duration")) * time.Minute)
 	adaptive.Stop()
-
-	//Finish program
-	// function finishProgram
 }

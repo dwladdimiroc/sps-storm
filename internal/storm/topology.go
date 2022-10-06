@@ -7,6 +7,7 @@ import (
 	"github.com/sajari/regression"
 	"math"
 	"reflect"
+	"strings"
 )
 
 type Bolt struct {
@@ -54,12 +55,14 @@ func (t *Topology) Init(id string) {
 
 func (t *Topology) CreateTopology(summaryTopology SummaryTopology) {
 	for _, boltCurrent := range summaryTopology.Bolts {
-		var bolt = Bolt{
-			Name:            boltCurrent.BoltID,
-			Replicas:        1,
-			VirtualMachines: make(map[string]float64),
+		if !strings.Contains(boltCurrent.BoltID, "__") {
+			var bolt = Bolt{
+				Name:            boltCurrent.BoltID,
+				Replicas:        1,
+				VirtualMachines: make(map[string]float64),
+			}
+			t.Bolts = append(t.Bolts, bolt)
 		}
-		t.Bolts = append(t.Bolts, bolt)
 	}
 
 	for _, worker := range summaryTopology.Workers {

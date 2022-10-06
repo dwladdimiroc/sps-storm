@@ -10,25 +10,31 @@ import (
 )
 
 type Bolt struct {
-	Name                     string             `csv:"name"`
-	Time                     int64              `csv:"time"`
-	Replicas                 int64              `csv:"replicas"`
-	PredictionReplicas       int64              `csv:"prediction_replicas"`
-	Input                    int64              `csv:"input"`
-	Output                   int64              `csv:"output"`
-	ExecutedTimeAvg          float64            `csv:"executed_time_avg"`
-	ExecutedTimeBenchmarkAvg float64            `csv:"executed_time_benchmark_avg"`
-	ExecutedTimeAvgSamples   []float64          `csv:"-"`
-	Queue                    int64              `csv:"queue"`
-	ExecutedTotal            int64              `csv:"executed_total"`
-	CompleteLatency          float64            `csv:"complete_latency"`
-	VirtualMachines          map[string]float64 `csv:"-"`
+	Name                            string             `csv:"name"`
+	Time                            int64              `csv:"time"`
+	Replicas                        int64              `csv:"replicas"`
+	PredictionReplicas              int64              `csv:"prediction_replicas"`
+	Input                           int64              `csv:"input"`
+	Output                          int64              `csv:"output"`
+	ExecutedTimeAvg                 float64            `csv:"executed_time_avg"`
+	ExecutedTimeAvgSamples          []float64          `csv:"-"`
+	ExecutedTimeBenchmarkAvg        float64            `csv:"executed_time_benchmark_avg"`
+	ExecutedTimeBenchmarkAvgSamples []float64          `csv:"-"`
+	ExecutedTotal                   int64              `csv:"executed_total"`
+	CompleteLatency                 float64            `csv:"complete_latency"`
+	VirtualMachines                 map[string]float64 `csv:"-"`
 }
 
 func (b *Bolt) clearStatsTimeWindow() {
 	b.Input = 0
 	b.Output = 0
 	b.ExecutedTimeAvg = 0
+}
+
+func (b *Bolt) GetExecutedTimeAvg() float64 {
+	v, _ := stats.Mean(b.ExecutedTimeAvgSamples)
+	b.ExecutedTimeAvgSamples = nil
+	return v
 }
 
 type Topology struct {
@@ -95,9 +101,9 @@ func (t *Topology) BenchmarkExecutedTimeAvg() {
 
 	for i := range t.Bolts {
 		var samples []float64
-		for j := range t.Bolts[i].ExecutedTimeAvgSamples {
-			if !math.IsNaN(t.Bolts[i].ExecutedTimeAvgSamples[j]) {
-				samples = append(samples, t.Bolts[i].ExecutedTimeAvgSamples[j])
+		for j := range t.Bolts[i].ExecutedTimeBenchmarkAvgSamples {
+			if !math.IsNaN(t.Bolts[i].ExecutedTimeBenchmarkAvgSamples[j]) {
+				samples = append(samples, t.Bolts[i].ExecutedTimeBenchmarkAvgSamples[j])
 			}
 		}
 

@@ -8,8 +8,11 @@ import (
 )
 
 func execute(topology storm.Topology) {
-	err := updateReplicas(topology)
-	log.Printf("execute: rebalanced topology %v\n", err)
+	if err := updateReplicas(topology); err != nil {
+		log.Printf("execute: rebalanced topology %v\n", err)
+	} else {
+		log.Printf("execute: rebalanced topology OK\n")
+	}
 }
 
 func updateReplicas(topology storm.Topology) error {

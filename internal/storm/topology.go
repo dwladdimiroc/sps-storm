@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"github.com/dwladdimiroc/sps-storm/internal/util"
 	"github.com/montanaflynn/stats"
-	"github.com/sajari/regression"
 	"math"
 	"reflect"
 	"strings"
@@ -39,18 +38,14 @@ func (b *Bolt) GetExecutedTimeAvg() float64 {
 }
 
 type Topology struct {
-	Id              string
-	Benchmark       bool
-	InputRate       int64
-	InputRegression *regression.Regression
-	Bolts           []Bolt
+	Id        string
+	Benchmark bool
+	InputRate []int64
+	Bolts     []Bolt
 }
 
 func (t *Topology) Init(id string) {
 	t.Id = id
-	t.InputRegression = new(regression.Regression)
-	t.InputRegression.SetObserved("input")
-	t.InputRegression.SetVar(0, "time")
 }
 
 func (t *Topology) CreateTopology(summaryTopology SummaryTopology) {
@@ -93,7 +88,6 @@ func (t *Topology) CreateTopology(summaryTopology SummaryTopology) {
 }
 
 func (t *Topology) ClearStatsTimeWindow() {
-	t.InputRate = 0
 	for i := range t.Bolts {
 		t.Bolts[i].clearStatsTimeWindow()
 	}
@@ -123,8 +117,4 @@ func (t *Topology) BenchmarkExecutedTimeAvg() {
 
 		t.Bolts[i].ExecutedTimeBenchmarkAvg, _ = stats.Mean(normSamples)
 	}
-}
-
-func (t *Topology) AddSample(input int64, time int) {
-	t.InputRegression.Train(regression.DataPoint(float64(input), []float64{float64(time)}))
 }

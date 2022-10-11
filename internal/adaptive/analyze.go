@@ -4,6 +4,7 @@ import (
 	"github.com/dwladdimiroc/sps-storm/internal/storm"
 	"github.com/dwladdimiroc/sps-storm/internal/util"
 	"github.com/montanaflynn/stats"
+	"github.com/sajari/regression"
 	"github.com/spf13/viper"
 	"log"
 	"math"
@@ -20,18 +21,30 @@ func analyze(topology *storm.Topology) {
 }
 
 func predictionInput(topology *storm.Topology) int64 {
-	if err := topology.InputRegression.Run(); err != nil {
+	var inputRegression = new(regression.Regression)
+	inputRegression.SetObserved("input")
+	inputRegression.SetVar(0, "time")
+
+	for i := range topology.InputRate {
+		inputRegression.Train(regression.DataPoint(float64(topology.InputRate[i]), []float64{float64(i)}))
+	}
+
+	if err := inputRegression.Run(); err != nil {
 		log.Printf("error predictive input: %v\n", err)
 	}
+	log.Printf("[predictionInput] %s\n", inputRegression.String())
 
 	var predInput []float64
 	for i := 1; i <= viper.GetInt("storm.adaptive.prediction_samples"); i++ {
-		if sample, err := topology.InputRegression.Predict([]float64{float64(period + i)}); err != nil {
+		if sample, err := inputRegression.Predict([]float64{float64(period + i)}); err != nil {
 			log.Printf("error predictive input: %v\n", err)
 		} else {
+			log.Printf("[predictionInput] period={%d},i={%d},sample={%v},\n", period, i, sample)
 			predInput = append(predInput, sample)
 		}
 	}
+
+	log.Printf("[predictionInput] predInput={%v}\n", predInput)
 	if input, err := stats.Mean(predInput); err != nil {
 		log.Printf("error mean input: %v\n", err)
 		return 0

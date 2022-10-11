@@ -31,13 +31,14 @@ func updateTopology(topology *storm.Topology, api storm.MetricsAPI) {
 }
 
 func updateStatsInputStream(topology *storm.Topology, api storm.MetricsAPI) {
+	var inputRate int64
 	for _, spout := range api.Spouts {
 		for _, bolt := range api.Bolts {
 			for _, executed := range bolt.Executed {
 				if spout.ID == executed.ComponentID {
 					for _, transferred := range spout.Emitted {
 						if transferred.StreamID == executed.StreamID {
-							topology.InputRate += int64(transferred.Value)
+							inputRate += int64(transferred.Value)
 							for i := range topology.Bolts {
 								if bolt.ID == topology.Bolts[i].Name {
 									topology.Bolts[i].Input = int64(transferred.Value)
@@ -50,7 +51,8 @@ func updateStatsInputStream(topology *storm.Topology, api storm.MetricsAPI) {
 		}
 	}
 
-	topology.AddSample(topology.InputRate, period)
+	topology.InputRate = append(topology.InputRate, inputRate)
+	log.Printf("[monitor] period={%d},inputRate={%d}", period, inputRate)
 }
 
 func updateCompleteLatency(topology *storm.Topology, api storm.MetricsAPI) {
@@ -72,6 +74,7 @@ func updateStatsBolt(topology *storm.Topology, api storm.MetricsAPI) {
 	}
 
 	for i := range topology.Bolts {
+		topology.Bolts[i].Time = int64(period) * viper.GetInt64("storm.adaptive.time_window_size")
 		updateInputBolt(&topology.Bolts[i], api)
 	}
 }

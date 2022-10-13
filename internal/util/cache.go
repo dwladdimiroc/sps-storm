@@ -42,7 +42,7 @@ func RedisSet(key, value string) error {
 	if val, err := rdb.Set(ctx, key, value, 0).Result(); err != nil {
 		return err
 	} else {
-		log.Printf("redis set: %v\n", val)
+		log.Printf("redis: set={%v}\n", val)
 		return nil
 	}
 }

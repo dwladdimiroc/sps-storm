@@ -9,9 +9,9 @@ import (
 
 func execute(topology storm.Topology) {
 	if err := updateReplicas(topology); err != nil {
-		log.Printf("execute: rebalanced topology %v\n", err)
+		log.Printf("execute: rebalanced topology {%v}\n", err)
 	} else {
-		log.Printf("execute: rebalanced topology OK\n")
+		log.Printf("execute: rebalanced topology {ok}\n")
 	}
 }
 

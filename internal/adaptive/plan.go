@@ -17,6 +17,7 @@ func planning(topology *storm.Topology) {
 				topology.Bolts[i].Replicas = topology.Bolts[i].PredictionReplicas
 			}
 		}
-		log.Printf("[Planning] Bolt={%s},InputRate={%d},ExecutedTime={%.2f},TimeWindows={%v},Replicas={%d}\n", topology.Bolts[i].Name, topology.InputRate, topology.Bolts[i].ExecutedTimeAvg, viper.GetInt("storm.adaptive.time_window_size"), topology.Bolts[i].Replicas)
+		log.Printf("planning: ok\n")
+		//log.Printf("planning: bolt={%s},replicas={%d}\n", topology.Bolts[i].Name, topology.Bolts[i].Replicas)
 	}
 }

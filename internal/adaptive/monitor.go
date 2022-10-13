@@ -1,7 +1,6 @@
 package adaptive
 
 import (
-	"fmt"
 	"github.com/dwladdimiroc/sps-storm/internal/storm"
 	"github.com/dwladdimiroc/sps-storm/internal/util"
 	"github.com/spf13/viper"
@@ -52,7 +51,7 @@ func updateStatsInputStream(topology *storm.Topology, api storm.MetricsAPI) {
 	}
 
 	topology.InputRate = append(topology.InputRate, inputRate)
-	log.Printf("[monitor] period={%d},inputRate={%d}", period, inputRate)
+	//log.Printf("[monitor] period={%d},inputRate={%d}", period, inputRate)
 }
 
 func updateCompleteLatency(topology *storm.Topology, api storm.MetricsAPI) {
@@ -121,7 +120,7 @@ func updateInputBolt(bolt *storm.Bolt, api storm.MetricsAPI) {
 func saveMetrics(topology storm.Topology) {
 	for _, bolt := range topology.Bolts {
 		if err := util.WriteCsv(topology.Id, bolt.Name, []storm.Bolt{bolt}); err != nil {
-			fmt.Printf("error write csv: %v\n", err)
+			log.Printf("error write csv: %v\n", err)
 		}
 	}
 }

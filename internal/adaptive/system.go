@@ -21,7 +21,7 @@ func Init(topologyId string) {
 
 func Start(limit time.Duration) {
 	go func(schedulerAdaptive *gocron.Scheduler) {
-		schedulerAdaptive.Every(uint64(viper.GetInt("storm.adaptive.benchmark_samples"))).Seconds().Do(adaptiveSystem, topology)
+		schedulerAdaptive.Every(uint64(viper.GetInt("storm.adaptive.time_windows"))).Seconds().Do(adaptiveSystem, topology)
 		<-schedulerAdaptive.Start()
 	}(schedulerAdaptive)
 	time.Sleep(limit)

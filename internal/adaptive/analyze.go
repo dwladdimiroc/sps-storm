@@ -26,21 +26,30 @@ func predictionInput(topology *storm.Topology) int64 {
 	inputRegression.SetVar(0, "time")
 
 	//log.Printf("analyze: input={%v}\n", topology.InputRate)
-	for i := range topology.InputRate {
+	var index int
+	if index = len(topology.InputRate) - viper.GetInt("storm.adaptive.input_samples"); index < 0 {
+		index = 0
+	}
+	for i := index; i < len(topology.InputRate); i++ {
+		log.Printf("analyze: train: index={%d},sample={%v},\n", i, topology.InputRate[i])
 		inputRegression.Train(regression.DataPoint(float64(topology.InputRate[i]), []float64{float64(i)}))
 	}
 
 	if err := inputRegression.Run(); err != nil {
-		log.Printf("error predictive input: %v\n", err)
+		log.Printf("error predict input: %v\n", err)
 	}
 	//log.Printf("[predictionInput] %s\n", inputRegression.String())
 
 	var predInput []float64
-	for i := 1; i <= viper.GetInt("storm.adaptive.prediction_samples"); i++ {
-		if sample, err := inputRegression.Predict([]float64{float64(period + i)}); err != nil {
-			log.Printf("error predictive input: %v\n", err)
+	var indexPrediction = index + viper.GetInt("storm.adaptive.input_samples")
+	if len(topology.InputRate) < viper.GetInt("storm.adaptive.input_samples") {
+		indexPrediction = index + len(topology.InputRate)
+	}
+	for i := indexPrediction; i < indexPrediction+viper.GetInt("storm.adaptive.input_predict"); i++ {
+		if sample, err := inputRegression.Predict([]float64{float64(i)}); err != nil {
+			log.Printf("error predict input: %v\n", err)
 		} else {
-			//log.Printf("analyze: period={%d},prediction={%d},sample={%v},\n", period, period+i, sample)
+			log.Printf("analyze: predict: index={%d},sample={%v},\n", i, sample)
 			predInput = append(predInput, sample)
 		}
 	}

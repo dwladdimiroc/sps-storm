@@ -16,6 +16,7 @@ storm:
     time_window_size: 5
     benchmark_samples: 12
     prediction_samples: 6
+    prediction_input: true
     input_samples: 12
     input_predict: 6
     limit_replicas: 100

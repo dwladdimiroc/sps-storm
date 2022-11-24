@@ -12,12 +12,32 @@ import (
 
 func analyze(topology *storm.Topology) {
 	log.Printf("analyze: period %v\n", period)
-	input := predictionInput(topology)
+	input := getInput(topology)
 	//log.Printf("input predicted: %d\n", input)
 	for i := range topology.Bolts {
 		topology.Bolts[i].PredictionReplicas = predictionReplicas(input, topology.Bolts[i])
 		//log.Printf("analyze: bolt={%s},prediction={%d}", topology.Bolts[i].Name, topology.Bolts[i].PredictionReplicas)
 	}
+}
+
+func getInput(topology *storm.Topology) int64 {
+	var input int64
+	var samplesF64 []float64
+	var index int
+	if index = len(topology.InputRate) - viper.GetInt("storm.adaptive.input_samples"); index < 0 {
+		index = 0
+	}
+	for i := index; i < len(topology.InputRate); i++ {
+		samplesF64 = append(samplesF64, float64(topology.InputRate[i]))
+	}
+	if viper.GetBool("storm.adaptive.prediction_input") {
+		log.Printf("analyse: prediction_input: true\n")
+		input = predictionInput(topology)
+	} else {
+		log.Printf("analyse: prediction_input: false\n")
+		input = topology.InputRate[len(topology.InputRate)-1]
+	}
+	return input
 }
 
 func predictionInput(topology *storm.Topology) int64 {

@@ -1,2 +1,38 @@
-# sps-storm
-SPS Storm deploy in GCP
+# Self-adaptive in Apache Storm
+Implementation of MAPE Model for Storm extension in the article [[1]](#1) and [[2]](#2). This project presents the self-adaptive system for to modify the number of active/inactive replicas for each pool of operators in the SPS application. The goal is to analyse differences metrics (i.e. input, executed time, queue) and to plan the changes necessary for to process all input events in the SPS.   
+
+## Configuration
+The config file '[config.yaml](configs/config.yaml)' has three principals parameters: `nimbus`, `redis`, `storm`. 
+
+The parameter `nimbus` is related to Nimbus component in Storm. The variables `host` and `port` are the IP location of Nimbus.
+
+The parameter `redis` is related to Redis cache. The variables `host` and `port` are the IP location of Redis.
+
+The params `storm` is related to Apache Storm.
+
+The variable `deploy` is related to application deployment. 
+- `duration` is the time of the experiment
+- `script` is the app script that Apache will deploy
+- `analyze` is the parameters if the system adapts (or not) the Storm application.  
+
+The variable `adaptive` is related to self-adaptive system.
+- `time_window_size` size of the time period where a sample is obtained. Its value is in seconds.
+- `benchmark_samples` numbers of samples used by the benchmark.
+- `prediction_samples` numbers of samples by MAPE model.
+- `prediction_input` model used by input prediction. it's possible three variables: lineal, fft or basic
+- `input_samples`  number of samples used by predictive model
+- `input_predict`  number of predictions made by predictive model
+- `limit_repicas`  limit of number of pool replicas
+
+The variable `csv` is the folder where the system saves the statistics.
+
+## References
+<a id="1">[1]</a>
+D. Wladdimiro, L. Arantes, P. Sens and N. Hidalgo. (2022). 
+A predictive approach for dynamic replication of operators in distributed stream processing systems.
+IEEE 34th International Symposium on Computer Architecture and High Performance Computing (SBAC-PAD), Bordeaux, France, pp. 120-129.
+
+<a id="2">[2]</a>
+Daniel Wladdimiro, Luciana Arantes, Nicolas Hidalgo, Pierre Sens. (2022)
+A predictive model for Stream Processing System that dynamically calibrates the number of operator replicas.
+Conférence francophone d'informatique en Parallélisme, Architecture et Système (ComPAS), Amiens, France. 

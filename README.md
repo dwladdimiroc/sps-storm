@@ -27,12 +27,12 @@ The variable `adaptive` is related to self-adaptive system.
 The variable `csv` is the folder where the system saves the statistics.
 
 ## References
-<a id="1">[1]</a>
+<a id="1" href="https://hal.science/hal-03962939/file/SBAC_PAD_2022___Paper___A_predictive_approach_for_dynamic_replication_of_operators_in_distributed_stream_processing_systems.pdf">[1]</a>
 D. Wladdimiro, L. Arantes, P. Sens and N. Hidalgo. (2022). 
 A predictive approach for dynamic replication of operators in distributed stream processing systems.
 IEEE 34th International Symposium on Computer Architecture and High Performance Computing (SBAC-PAD), Bordeaux, France, pp. 120-129.
 
-<a id="2">[2]</a>
+<a id="2" href="https://hal.science/hal-03783768/file/ComPAS2022_paper_22-2.pdf">[2]</a>
 Daniel Wladdimiro, Luciana Arantes, Nicolas Hidalgo, Pierre Sens. (2022)
 A predictive model for Stream Processing System that dynamically calibrates the number of operator replicas.
 Conférence francophone d'informatique en Parallélisme, Architecture et Système (ComPAS), Amiens, France. 

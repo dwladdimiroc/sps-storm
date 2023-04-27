@@ -30,17 +30,20 @@ func getInput(topology *storm.Topology) int64 {
 	for i := index; i < len(topology.InputRate); i++ {
 		samplesF64 = append(samplesF64, float64(topology.InputRate[i]))
 	}
-	if viper.GetBool("storm.adaptive.prediction_input") {
-		log.Printf("analyse: prediction_input: true\n")
-		input = predictionInput(topology)
-	} else {
-		log.Printf("analyse: prediction_input: false\n")
+	if viper.GetString("storm.adaptive.prediction_input") == "lineal" {
+		log.Printf("analyse: prediction_input: lineal regression\n")
+		input = predictionLinealInput(topology)
+	} else if viper.GetString("storm.adaptive.prediction_input") == "fft" {
+		log.Printf("analyse: prediction_input: fft\n")
+		predictionFFTInput()
+	} else { // basic
+		log.Printf("analyse: prediction_input: basic\n")
 		input = topology.InputRate[len(topology.InputRate)-1]
 	}
 	return input
 }
 
-func predictionInput(topology *storm.Topology) int64 {
+func predictionLinealInput(topology *storm.Topology) int64 {
 	var inputRegression = new(regression.Regression)
 	inputRegression.SetObserved("input")
 	inputRegression.SetVar(0, "time")
@@ -58,7 +61,7 @@ func predictionInput(topology *storm.Topology) int64 {
 	if err := inputRegression.Run(); err != nil {
 		log.Printf("error predict input: %v\n", err)
 	}
-	//log.Printf("[predictionInput] %s\n", inputRegression.String())
+	//log.Printf("[predictionLinealInput] %s\n", inputRegression.String())
 
 	var predInput []float64
 	var indexPrediction = index + viper.GetInt("storm.adaptive.input_samples")
@@ -74,7 +77,7 @@ func predictionInput(topology *storm.Topology) int64 {
 		}
 	}
 
-	//log.Printf("[predictionInput] predInput={%v}\n", predInput)
+	//log.Printf("[predictionLinealInput] predInput={%v}\n", predInput)
 	if input, err := stats.Mean(predInput); err != nil {
 		log.Printf("error mean input: %v\n", err)
 		return 0
@@ -82,6 +85,10 @@ func predictionInput(topology *storm.Topology) int64 {
 		//log.Printf("analyze: prediction input={%v}\n", int64(math.Ceil(input)))
 		return int64(math.Ceil(input))
 	}
+}
+
+func predictionFFTInput() {
+
 }
 
 func predictionReplicas(input int64, bolt storm.Bolt) int64 {

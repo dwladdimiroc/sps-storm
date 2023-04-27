@@ -26,6 +26,15 @@ The variable `adaptive` is related to self-adaptive system.
 
 The variable `csv` is the folder where the system saves the statistics.
 
+## Requisites
+For compile this project you need `go` and `redis`, and of course, `storm`. Please refer to you platform's/OS' documentation for support.
+
+The `go` last version used was 1.91.1  (see the <a href="https://go.dev/doc/install">go installation instructions</a> for details). For `redis`, the last version used was 6.x. And `storm`, you must use the `1.x` version (see <a href="https://github.com/apache/storm/tree/1.x-branch">storm branch</a>).
+
+## Deploy
+
+The main file is `initSps.sh` which is responsible for run the monitor. If the machine has no Golang installed, so you should comment line 4 `go build`, because this linea compile again the Go project. It's mandatory create the `\stats` folder in the project. And the `scripts` folder has Storm applications that the system can use. Each script is the commands for deploy Storm app, so you must change the Storm directory is necessary.  
+
 ## References
 <a id="1" href="https://hal.science/hal-03962939/file/SBAC_PAD_2022___Paper___A_predictive_approach_for_dynamic_replication_of_operators_in_distributed_stream_processing_systems.pdf">[1]</a>
 D. Wladdimiro, L. Arantes, P. Sens and N. Hidalgo. (2022). 

@@ -33,16 +33,15 @@ func updateStatsInputStream(topology *storm.Topology, api storm.MetricsAPI) {
 	var inputRate int64
 	for _, spout := range api.Spouts {
 		for _, emitted := range spout.Emitted {
-			streamId := emitted.StreamID
-			if streamId != "__metrics" && streamId != "__ack_init" && streamId != "__system" {
-				if inputRate != 0 {
+			if emitted.StreamID != "__metrics" && emitted.StreamID != "__ack_init" && emitted.StreamID != "__system" {
+				if inputRate == 0 {
 					inputRate = int64(emitted.Value) - topology.InputAccum
 					topology.InputAccum = int64(emitted.Value)
 				}
-			}
-			for i := range topology.Bolts {
-				if topology.Bolts[i].Name == streamId {
-					topology.Bolts[i].Input = inputRate
+				for i := range topology.Bolts {
+					if topology.Bolts[i].Name == emitted.StreamID {
+						topology.Bolts[i].Input = inputRate
+					}
 				}
 			}
 		}

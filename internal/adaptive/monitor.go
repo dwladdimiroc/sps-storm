@@ -32,19 +32,17 @@ func updateTopology(topology *storm.Topology, api storm.MetricsAPI) {
 func updateStatsInputStream(topology *storm.Topology, api storm.MetricsAPI) {
 	var inputRate int64
 	for _, spout := range api.Spouts {
-		for _, bolt := range api.Bolts {
-			for _, executed := range bolt.Executed {
-				if spout.ID == executed.ComponentID {
-					for _, transferred := range spout.Emitted {
-						if transferred.StreamID == executed.StreamID {
-							inputRate += int64(transferred.Value)
-							for i := range topology.Bolts {
-								if bolt.ID == topology.Bolts[i].Name {
-									topology.Bolts[i].Input = int64(transferred.Value)
-								}
-							}
-						}
-					}
+		for _, emitted := range spout.Emitted {
+			streamId := emitted.StreamID
+			if streamId != "__metrics" && streamId != "__ack_init" && streamId != "__system" {
+				if inputRate != 0 {
+					inputRate = int64(emitted.Value) - topology.InputAccum
+					topology.InputAccum = int64(emitted.Value)
+				}
+			}
+			for i := range topology.Bolts {
+				if topology.Bolts[i].Name == streamId {
+					topology.Bolts[i].Input = inputRate
 				}
 			}
 		}
@@ -81,10 +79,12 @@ func updateStatsBolt(topology *storm.Topology, api storm.MetricsAPI) {
 func updateOutputBolt(topology *storm.Topology, boltApi storm.BoltMetric) {
 	for i := range topology.Bolts {
 		if topology.Bolts[i].Name == boltApi.ID {
+			var outputRate int64
 			for _, executed := range boltApi.Executed {
-				topology.Bolts[i].Output += int64(executed.Value)
-				topology.Bolts[i].ExecutedTotal += topology.Bolts[i].Output
+				outputRate += int64(executed.Value)
 			}
+			topology.Bolts[i].Output = outputRate - topology.Bolts[i].ExecutedTotal
+			topology.Bolts[i].ExecutedTotal = outputRate
 		}
 	}
 }
@@ -108,13 +108,16 @@ func updateExecutedAvg(topology *storm.Topology, boltApi storm.BoltMetric) {
 }
 
 func updateInputBolt(bolt *storm.Bolt, api storm.MetricsAPI) {
+	var inputRate int64
 	for _, boltApi := range api.Bolts {
 		for _, emitted := range boltApi.Emitted {
 			if emitted.StreamID == bolt.Name {
-				bolt.Input += int64(emitted.Value)
+				inputRate += int64(emitted.Value)
 			}
 		}
 	}
+	bolt.Input = inputRate - bolt.EmittedTotal
+	bolt.EmittedTotal = inputRate
 }
 
 func saveMetrics(topology storm.Topology) {

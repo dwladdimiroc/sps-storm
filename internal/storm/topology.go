@@ -20,6 +20,7 @@ type Bolt struct {
 	ExecutedTimeAvgSamples          []float64          `csv:"-"`
 	ExecutedTimeBenchmarkAvg        float64            `csv:"executed_time_benchmark_avg"`
 	ExecutedTimeBenchmarkAvgSamples []float64          `csv:"-"`
+	EmittedTotal                    int64              `csv:"emitted_total"`
 	ExecutedTotal                   int64              `csv:"executed_total"`
 	CompleteLatency                 float64            `csv:"complete_latency"`
 	VirtualMachines                 map[string]float64 `csv:"-"`
@@ -38,10 +39,11 @@ func (b *Bolt) GetExecutedTimeAvg() float64 {
 }
 
 type Topology struct {
-	Id        string
-	Benchmark bool
-	InputRate []int64
-	Bolts     []Bolt
+	Id         string
+	Benchmark  bool
+	InputAccum int64
+	InputRate  []int64
+	Bolts      []Bolt
 }
 
 func (t *Topology) Init(id string) {

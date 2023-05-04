@@ -115,8 +115,10 @@ func updateInputBolt(bolt *storm.Bolt, api storm.MetricsAPI) {
 			}
 		}
 	}
-	bolt.Input = inputRate - bolt.EmittedTotal
-	bolt.EmittedTotal = inputRate
+	if inputRate > 0 {
+		bolt.Input = inputRate - bolt.EmittedTotal
+		bolt.EmittedTotal = inputRate
+	}
 }
 
 func saveMetrics(topology storm.Topology) {

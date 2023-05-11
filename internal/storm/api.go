@@ -13,7 +13,6 @@ import (
 
 const NimbusSummaryTopologyBaseURL = "http://UI_HOST:UI_PORT/api/v1/topology/TOPOLOGY_ID?sys=0&windows=all-time"
 const NimbusMetricsBaseURL = "http://UI_HOST:UI_PORT/api/v1/topology/TOPOLOGY_ID/metrics?window=600"
-const NimbusRebalancedBaseURL = "http://UI_HOST:UI_PORT/api/v1/topology/TOPOLOGY_ID/rebalance/0"
 const NimbusSummaryTopologies = "http://UI_HOST:UI_PORT/api/v1/topology/summary"
 
 func parseURL(urlRaw string, topologyId string) string {

@@ -7,6 +7,10 @@ redis:
   host: localhost
   port: 6379
 
+predictor:
+  host: localhost
+  port: 5000
+
 storm:
   deploy:
     duration: 22
@@ -15,9 +19,9 @@ storm:
   adaptive:
     time_window_size: 5
     benchmark_samples: 12
-    prediction_samples: 6
-    prediction_input: lineal
-    input_samples: 12
-    input_predict: 6
+    analyze_samples: 6
+    predictive_model: lineal
+    prediction_samples: 12
+    prediction_number: 6
     limit_replicas: 100
   csv: "stats/"

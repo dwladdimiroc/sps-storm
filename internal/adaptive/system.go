@@ -30,7 +30,7 @@ func Start(limit time.Duration) {
 func adaptiveSystem(topology *storm.Topology) {
 	if ok := monitor(topology.Id, topology); ok {
 		if viper.GetBool("storm.deploy.analyze") {
-			if period%viper.GetInt("storm.adaptive.prediction_samples") == 0 {
+			if period%viper.GetInt("storm.adaptive.analyze_samples") == 0 {
 				analyze(topology)
 				planning(topology)
 				execute(*topology)

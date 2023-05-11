@@ -1,10 +1,10 @@
 package adaptive
 
 import (
+	"github.com/dwladdimiroc/sps-storm/internal/predictive"
 	"github.com/dwladdimiroc/sps-storm/internal/storm"
 	"github.com/dwladdimiroc/sps-storm/internal/util"
 	"github.com/montanaflynn/stats"
-	"github.com/sajari/regression"
 	"github.com/spf13/viper"
 	"log"
 	"math"
@@ -21,74 +21,23 @@ func analyze(topology *storm.Topology) {
 }
 
 func getInput(topology *storm.Topology) int64 {
-	var input int64
-	var samplesF64 []float64
-	var index int
-	if index = len(topology.InputRate) - viper.GetInt("storm.adaptive.input_samples"); index < 0 {
-		index = 0
-	}
-	for i := index; i < len(topology.InputRate); i++ {
-		samplesF64 = append(samplesF64, float64(topology.InputRate[i]))
-	}
-	if viper.GetString("storm.adaptive.prediction_input") == "lineal" {
-		log.Printf("analyse: prediction_input: lineal regression\n")
-		input = predictionLinealInput(topology)
-	} else if viper.GetString("storm.adaptive.prediction_input") == "fft" {
-		log.Printf("analyse: prediction_input: fft\n")
-		predictionFFTInput()
-	} else { // basic
+	var samplesPrediction []float64
+
+	if viper.GetString("storm.adaptive.predictive_model") == "basic" {
 		log.Printf("analyse: prediction_input: basic\n")
-		input = topology.InputRate[len(topology.InputRate)-1]
-	}
-	return input
-}
-
-func predictionLinealInput(topology *storm.Topology) int64 {
-	var inputRegression = new(regression.Regression)
-	inputRegression.SetObserved("input")
-	inputRegression.SetVar(0, "time")
-
-	//log.Printf("analyze: input={%v}\n", topology.InputRate)
-	var index int
-	if index = len(topology.InputRate) - viper.GetInt("storm.adaptive.input_samples"); index < 0 {
-		index = 0
-	}
-	for i := index; i < len(topology.InputRate); i++ {
-		log.Printf("analyze: train: index={%d},sample={%v},\n", i, topology.InputRate[i])
-		inputRegression.Train(regression.DataPoint(float64(topology.InputRate[i]), []float64{float64(i)}))
+		samplesPrediction = predictive.Simple(topology)
+	} else {
+		log.Printf("analyse: prediction_input: %s\n", viper.GetString("storm.adaptive.predictive_model"))
+		samplesPrediction = predictive.PredictionInput(topology)
 	}
 
-	if err := inputRegression.Run(); err != nil {
-		log.Printf("error predict input: %v\n", err)
-	}
-	//log.Printf("[predictionLinealInput] %s\n", inputRegression.String())
-
-	var predInput []float64
-	var indexPrediction = index + viper.GetInt("storm.adaptive.input_samples")
-	if len(topology.InputRate) < viper.GetInt("storm.adaptive.input_samples") {
-		indexPrediction = index + len(topology.InputRate)
-	}
-	for i := indexPrediction; i < indexPrediction+viper.GetInt("storm.adaptive.input_predict"); i++ {
-		if sample, err := inputRegression.Predict([]float64{float64(i)}); err != nil {
-			log.Printf("error predict input: %v\n", err)
-		} else {
-			log.Printf("analyze: predict: index={%d},sample={%v},\n", i, sample)
-			predInput = append(predInput, sample)
-		}
-	}
-
-	//log.Printf("[predictionLinealInput] predInput={%v}\n", predInput)
-	if input, err := stats.Mean(predInput); err != nil {
+	if input, err := stats.Mean(samplesPrediction); err != nil {
 		log.Printf("error mean input: %v\n", err)
 		return 0
 	} else {
-		//log.Printf("analyze: prediction input={%v}\n", int64(math.Ceil(input)))
+		log.Printf("analyze: samples ={%v}, prediction input={%v}\n", samplesPrediction, int64(math.Ceil(input)))
 		return int64(math.Ceil(input))
 	}
-}
-
-func predictionFFTInput() {
-
 }
 
 func predictionReplicas(input int64, bolt storm.Bolt) int64 {

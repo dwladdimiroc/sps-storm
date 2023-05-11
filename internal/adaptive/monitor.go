@@ -76,6 +76,10 @@ func updateStatsBolt(topology *storm.Topology, api storm.MetricsAPI) {
 		topology.Bolts[i].Time = int64(period) * viper.GetInt64("storm.adaptive.time_window_size")
 		updateInputBolt(&topology.Bolts[i], api)
 	}
+
+	for i := range topology.Bolts {
+		updateQueue(&topology.Bolts[i])
+	}
 }
 
 func updateOutputBolt(topology *storm.Topology, boltApi storm.BoltMetric) {
@@ -112,8 +116,27 @@ func updateInputBolt(bolt *storm.Bolt, api storm.MetricsAPI) {
 		for _, emitted := range boltApi.Emitted {
 			if emitted.StreamID == bolt.Name {
 				bolt.Input += int64(emitted.Value)
+				if !bolt.CheckBoltsPredecessor {
+					updateBoltsPredecessor(bolt, boltApi.ID)
+				}
 			}
 		}
+	}
+	bolt.CheckBoltsPredecessor = true
+}
+
+func updateBoltsPredecessor(bolt *storm.Bolt, nameBoltPredecessor string) {
+	for _, boltPredecessor := range bolt.BoltsPredecessor {
+		if boltPredecessor == nameBoltPredecessor {
+			return
+		}
+	}
+	bolt.BoltsPredecessor = append(bolt.BoltsPredecessor, nameBoltPredecessor)
+}
+
+func updateQueue(bolt *storm.Bolt) {
+	if bolt.Queue += bolt.Input - bolt.Output; bolt.Queue < 0 {
+		bolt.Queue = 0
 	}
 }
 

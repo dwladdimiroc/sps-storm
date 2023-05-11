@@ -12,11 +12,12 @@ import (
 
 func analyze(topology *storm.Topology) {
 	log.Printf("analyze: period %v\n", period)
-	input := getInput(topology)
+	predictedInput := getInput(topology)
 	//log.Printf("input predicted: %d\n", input)
 	for i := range topology.Bolts {
-		topology.Bolts[i].PredictionReplicas = predictionReplicas(input, topology.Bolts[i])
-		//log.Printf("analyze: bolt={%s},prediction={%d}", topology.Bolts[i].Name, topology.Bolts[i].PredictionReplicas)
+		predictedInput += predictionInputQueue(topology.Bolts[i], *topology) / viper.GetInt64("storm.adaptive.prediction_number")
+		topology.Bolts[i].PredictionReplicas = predictionReplicas(predictedInput, topology.Bolts[i])
+		log.Printf("analyze: bolt={%s},predictionInput={%d},predictionReplicas={%d}", topology.Bolts[i].Name, predictedInput, topology.Bolts[i].PredictionReplicas)
 	}
 }
 
@@ -24,10 +25,10 @@ func getInput(topology *storm.Topology) int64 {
 	var samplesPrediction []float64
 
 	if viper.GetString("storm.adaptive.predictive_model") == "basic" {
-		log.Printf("analyse: prediction_input: basic\n")
+		//log.Printf("analyse: prediction_input: basic\n")
 		samplesPrediction = predictive.Simple(topology)
 	} else {
-		log.Printf("analyse: prediction_input: %s\n", viper.GetString("storm.adaptive.predictive_model"))
+		//log.Printf("analyse: prediction_input: %s\n", viper.GetString("storm.adaptive.predictive_model"))
 		samplesPrediction = predictive.PredictionInput(topology)
 	}
 
@@ -35,9 +36,22 @@ func getInput(topology *storm.Topology) int64 {
 		log.Printf("error mean input: %v\n", err)
 		return 0
 	} else {
-		log.Printf("analyze: samples ={%v}, prediction input={%v}\n", samplesPrediction, int64(math.Ceil(input)))
+		//log.Printf("analyze: prediction_input: {%s}, samples ={%v}, prediction input={%v}\n", viper.GetString("storm.adaptive.predictive_model"), samplesPrediction, int64(math.Ceil(input)))
 		return int64(math.Ceil(input))
 	}
+}
+
+func predictionInputQueue(bolt storm.Bolt, topology storm.Topology) int64 {
+	var valuePredictionQ = bolt.Queue
+	for _, tagBoltPredecessor := range bolt.BoltsPredecessor {
+		for _, boltTopology := range topology.Bolts {
+			if boltTopology.Name == tagBoltPredecessor {
+				valuePredictionQ += predictionInputQueue(boltTopology, topology)
+			}
+		}
+	}
+
+	return valuePredictionQ
 }
 
 func predictionReplicas(input int64, bolt storm.Bolt) int64 {

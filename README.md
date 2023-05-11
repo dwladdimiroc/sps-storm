@@ -21,7 +21,7 @@ The variable `adaptive` is related to self-adaptive system.
 - `time_window_size` size of the time period where a sample is obtained. Its value is in seconds.
 - `benchmark_samples` numbers of samples used by the benchmark.
 - `analyze_samples` numbers of samples by MAPE model.
-- `preditive_model` model used by input prediction. it's possible three variables: lineal, fft or basic
+- `preditive_model` model used by input prediction. it's possible variables: `basic`, `regression_linear`, `fft`, `ann`, `random_forest`
 - `prediction_samples`  number of samples used by predictive model
 - `prediction_number`  number of predictions made by predictive model
 - `limit_repicas`  limit of number of pool replicas

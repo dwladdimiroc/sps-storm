@@ -16,6 +16,7 @@ type Bolt struct {
 	PredictionReplicas              int64              `csv:"prediction_replicas"`
 	Input                           int64              `csv:"input"`
 	Output                          int64              `csv:"output"`
+	Queue                           int64              `csv:"queue"`
 	ExecutedTimeAvg                 float64            `csv:"executed_time_avg"`
 	ExecutedTimeAvgSamples          []float64          `csv:"-"`
 	ExecutedTimeBenchmarkAvg        float64            `csv:"executed_time_benchmark_avg"`
@@ -23,6 +24,8 @@ type Bolt struct {
 	ExecutedTotal                   int64              `csv:"executed_total"`
 	CompleteLatency                 float64            `csv:"complete_latency"`
 	VirtualMachines                 map[string]float64 `csv:"-"`
+	CheckBoltsPredecessor           bool               `csv:"-"`
+	BoltsPredecessor                []string           `csv:"-"`
 }
 
 func (b *Bolt) clearStatsTimeWindow() {

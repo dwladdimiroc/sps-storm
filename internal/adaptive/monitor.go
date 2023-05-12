@@ -27,6 +27,7 @@ func updateTopology(topology *storm.Topology, api storm.MetricsAPI) {
 	updateStatsInputStream(topology, api)
 	updateCompleteLatency(topology, api)
 	updateStatsBolt(topology, api)
+	updatePredictedInput(topology)
 }
 
 func updateStatsInputStream(topology *storm.Topology, api storm.MetricsAPI) {
@@ -137,6 +138,14 @@ func updateBoltsPredecessor(bolt *storm.Bolt, nameBoltPredecessor string) {
 func updateQueue(bolt *storm.Bolt) {
 	if bolt.Queue += bolt.Input - bolt.Output; bolt.Queue < 0 {
 		bolt.Queue = 0
+	}
+}
+
+func updatePredictedInput(topology *storm.Topology) {
+	if len(topology.PredictedInputRate) > 0 {
+		for i := range topology.Bolts {
+			topology.Bolts[i].PredictedInput = topology.PredictedInputRate[period]
+		}
 	}
 }
 

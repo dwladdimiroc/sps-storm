@@ -34,6 +34,7 @@ func adaptiveSystem(topology *storm.Topology) {
 				analyze(topology)
 				planning(topology)
 				execute(*topology)
+				topology.ClearQueue()
 			}
 		}
 	}

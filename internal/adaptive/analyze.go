@@ -23,6 +23,9 @@ func analyze(topology *storm.Topology) {
 
 func getInput(topology *storm.Topology) int64 {
 	var samplesPrediction []float64
+	if topology.PredictedInputRate == nil {
+		topology.PredictedInputRate = make([]int64, len(topology.InputRate))
+	}
 
 	if viper.GetString("storm.adaptive.predictive_model") == "basic" {
 		//log.Printf("analyse: prediction_input: basic\n")
@@ -30,6 +33,10 @@ func getInput(topology *storm.Topology) int64 {
 	} else {
 		//log.Printf("analyse: prediction_input: %s\n", viper.GetString("storm.adaptive.predictive_model"))
 		samplesPrediction = predictive.PredictionInput(topology)
+	}
+
+	for i := 0; i < len(samplesPrediction); i++ {
+		topology.PredictedInputRate = append(topology.PredictedInputRate, int64(samplesPrediction[i]))
 	}
 
 	if input, err := stats.Mean(samplesPrediction); err != nil {

@@ -3,7 +3,7 @@ import numpy as np
 from sklearn.linear_model import LinearRegression
 
 
-def regression_linear_prediction(samples, prediction_number):
+def linear_regression_prediction(samples, prediction_number):
     t = list(range(len(samples)))
     # print(t)
     # print(samples)

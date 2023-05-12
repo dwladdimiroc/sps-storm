@@ -49,11 +49,11 @@ def fft():
     return jsonify(resp)
 
 
-@app.route('/regression_linear', methods=["POST"])
-def regression_linear():
+@app.route('/linear_regression', methods=["POST"])
+def linear_regression():
     samples = request.json['samples']
     prediction_number = request.json['prediction_number']
-    avg_prediction, predictions = regression_linear_prediction(samples, prediction_number)
+    avg_prediction, predictions = linear_regression_prediction(samples, prediction_number)
     resp = {
         "avg_prediction": avg_prediction,
         "predictions": predictions,

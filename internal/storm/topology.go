@@ -23,6 +23,7 @@ type Bolt struct {
 	ExecutedTimeBenchmarkAvgSamples []float64          `csv:"-"`
 	ExecutedTotal                   int64              `csv:"executed_total"`
 	CompleteLatency                 float64            `csv:"complete_latency"`
+	PredictedInput                  int64              `csv:"predicted_input"`
 	VirtualMachines                 map[string]float64 `csv:"-"`
 	CheckBoltsPredecessor           bool               `csv:"-"`
 	BoltsPredecessor                []string           `csv:"-"`
@@ -41,10 +42,11 @@ func (b *Bolt) GetExecutedTimeAvg() float64 {
 }
 
 type Topology struct {
-	Id        string
-	Benchmark bool
-	InputRate []int64
-	Bolts     []Bolt
+	Id                 string
+	Benchmark          bool
+	InputRate          []int64
+	PredictedInputRate []int64
+	Bolts              []Bolt
 }
 
 func (t *Topology) Init(id string) {
@@ -93,6 +95,12 @@ func (t *Topology) CreateTopology(summaryTopology SummaryTopology) {
 func (t *Topology) ClearStatsTimeWindow() {
 	for i := range t.Bolts {
 		t.Bolts[i].clearStatsTimeWindow()
+	}
+}
+
+func (t *Topology) ClearQueue() {
+	for i := range t.Bolts {
+		t.Bolts[i].Queue = 0
 	}
 }
 

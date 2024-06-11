@@ -16,14 +16,17 @@ type Bolt struct {
 	PredictionReplicas              int64              `csv:"prediction_replicas"`
 	Input                           int64              `csv:"input"`
 	Output                          int64              `csv:"output"`
+	Queue                           int64              `csv:"queue"`
 	ExecutedTimeAvg                 float64            `csv:"executed_time_avg"`
 	ExecutedTimeAvgSamples          []float64          `csv:"-"`
 	ExecutedTimeBenchmarkAvg        float64            `csv:"executed_time_benchmark_avg"`
 	ExecutedTimeBenchmarkAvgSamples []float64          `csv:"-"`
-	EmittedTotal                    int64              `csv:"emitted_total"`
 	ExecutedTotal                   int64              `csv:"executed_total"`
 	CompleteLatency                 float64            `csv:"complete_latency"`
+	PredictedInput                  int64              `csv:"predicted_input"`
 	VirtualMachines                 map[string]float64 `csv:"-"`
+	CheckBoltsPredecessor           bool               `csv:"-"`
+	BoltsPredecessor                []string           `csv:"-"`
 }
 
 func (b *Bolt) clearStatsTimeWindow() {
@@ -39,11 +42,11 @@ func (b *Bolt) GetExecutedTimeAvg() float64 {
 }
 
 type Topology struct {
-	Id         string
-	Benchmark  bool
-	InputAccum int64
-	InputRate  []int64
-	Bolts      []Bolt
+	Id                 string
+	Benchmark          bool
+	InputRate          []int64
+	PredictedInputRate []int64
+	Bolts              []Bolt
 }
 
 func (t *Topology) Init(id string) {
@@ -92,6 +95,12 @@ func (t *Topology) CreateTopology(summaryTopology SummaryTopology) {
 func (t *Topology) ClearStatsTimeWindow() {
 	for i := range t.Bolts {
 		t.Bolts[i].clearStatsTimeWindow()
+	}
+}
+
+func (t *Topology) ClearQueue() {
+	for i := range t.Bolts {
+		t.Bolts[i].Queue = 0
 	}
 }
 

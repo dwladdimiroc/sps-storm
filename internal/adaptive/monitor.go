@@ -27,20 +27,24 @@ func updateTopology(topology *storm.Topology, api storm.MetricsAPI) {
 	updateStatsInputStream(topology, api)
 	updateCompleteLatency(topology, api)
 	updateStatsBolt(topology, api)
+	updatePredictedInput(topology)
 }
 
 func updateStatsInputStream(topology *storm.Topology, api storm.MetricsAPI) {
 	var inputRate int64
 	for _, spout := range api.Spouts {
-		for _, emitted := range spout.Emitted {
-			if emitted.StreamID != "__metrics" && emitted.StreamID != "__ack_init" && emitted.StreamID != "__system" {
-				if inputRate == 0 {
-					inputRate = int64(emitted.Value) - topology.InputAccum
-					topology.InputAccum = int64(emitted.Value)
-				}
-				for i := range topology.Bolts {
-					if topology.Bolts[i].Name == emitted.StreamID {
-						topology.Bolts[i].Input = inputRate
+		for _, bolt := range api.Bolts {
+			for _, executed := range bolt.Executed {
+				if spout.ID == executed.ComponentID {
+					for _, transferred := range spout.Emitted {
+						if transferred.StreamID == executed.StreamID {
+							inputRate += int64(transferred.Value)
+							for i := range topology.Bolts {
+								if bolt.ID == topology.Bolts[i].Name {
+									topology.Bolts[i].Input = int64(transferred.Value)
+								}
+							}
+						}
 					}
 				}
 			}
@@ -73,17 +77,19 @@ func updateStatsBolt(topology *storm.Topology, api storm.MetricsAPI) {
 		topology.Bolts[i].Time = int64(period) * viper.GetInt64("storm.adaptive.time_window_size")
 		updateInputBolt(&topology.Bolts[i], api)
 	}
+
+	for i := range topology.Bolts {
+		updateQueue(&topology.Bolts[i])
+	}
 }
 
 func updateOutputBolt(topology *storm.Topology, boltApi storm.BoltMetric) {
 	for i := range topology.Bolts {
 		if topology.Bolts[i].Name == boltApi.ID {
-			var outputRate int64
 			for _, executed := range boltApi.Executed {
-				outputRate += int64(executed.Value)
+				topology.Bolts[i].Output += int64(executed.Value)
+				topology.Bolts[i].ExecutedTotal += topology.Bolts[i].Output
 			}
-			topology.Bolts[i].Output = outputRate - topology.Bolts[i].ExecutedTotal
-			topology.Bolts[i].ExecutedTotal = outputRate
 		}
 	}
 }
@@ -107,17 +113,39 @@ func updateExecutedAvg(topology *storm.Topology, boltApi storm.BoltMetric) {
 }
 
 func updateInputBolt(bolt *storm.Bolt, api storm.MetricsAPI) {
-	var inputRate int64
 	for _, boltApi := range api.Bolts {
 		for _, emitted := range boltApi.Emitted {
 			if emitted.StreamID == bolt.Name {
-				inputRate += int64(emitted.Value)
+				bolt.Input += int64(emitted.Value)
+				if !bolt.CheckBoltsPredecessor {
+					updateBoltsPredecessor(bolt, boltApi.ID)
+				}
 			}
 		}
 	}
-	if inputRate > 0 {
-		bolt.Input = inputRate - bolt.EmittedTotal
-		bolt.EmittedTotal = inputRate
+	bolt.CheckBoltsPredecessor = true
+}
+
+func updateBoltsPredecessor(bolt *storm.Bolt, nameBoltPredecessor string) {
+	for _, boltPredecessor := range bolt.BoltsPredecessor {
+		if boltPredecessor == nameBoltPredecessor {
+			return
+		}
+	}
+	bolt.BoltsPredecessor = append(bolt.BoltsPredecessor, nameBoltPredecessor)
+}
+
+func updateQueue(bolt *storm.Bolt) {
+	if bolt.Queue += bolt.Input - bolt.Output; bolt.Queue < 0 {
+		bolt.Queue = 0
+	}
+}
+
+func updatePredictedInput(topology *storm.Topology) {
+	if len(topology.PredictedInputRate) > 0 {
+		for i := range topology.Bolts {
+			topology.Bolts[i].PredictedInput = topology.PredictedInputRate[period]
+		}
 	}
 }
 

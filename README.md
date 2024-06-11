@@ -8,6 +8,8 @@ The parameter `nimbus` is related to Nimbus component in Storm. The variables `h
 
 The parameter `redis` is related to Redis cache. The variables `host` and `port` are the IP location of Redis.
 
+The parameter `predictor` is related to Predictor API. The variables `host` and `port` are the IP location of Predictor API.
+
 The params `storm` is related to Apache Storm.
 
 The variable `deploy` is related to application deployment. 
@@ -18,10 +20,10 @@ The variable `deploy` is related to application deployment.
 The variable `adaptive` is related to self-adaptive system.
 - `time_window_size` size of the time period where a sample is obtained. Its value is in seconds.
 - `benchmark_samples` numbers of samples used by the benchmark.
-- `prediction_samples` numbers of samples by MAPE model.
-- `prediction_input` model used by input prediction. it's possible three variables: lineal, fft or basic
-- `input_samples`  number of samples used by predictive model
-- `input_predict`  number of predictions made by predictive model
+- `analyze_samples` numbers of samples by MAPE model.
+- `preditive_model` model used by input prediction. it's possible variables: `basic`, `linear_regression`, `fft`, `ann`, `random_forest`
+- `prediction_samples`  number of samples used by predictive model
+- `prediction_number`  number of predictions made by predictive model
 - `limit_repicas`  limit of number of pool replicas
 
 The variable `csv` is the folder where the system saves the statistics.

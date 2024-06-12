@@ -92,6 +92,12 @@ func (t *Topology) CreateTopology(summaryTopology SummaryTopology) {
 	if err := util.CreateDir(t.Id); err != nil {
 		fmt.Printf("error mkdir: %v\n", err)
 	}
+
+	for _, bolt := range t.Bolts {
+		if err := util.CreateCsv(t.Id, bolt.Name, []Bolt{}); err != nil {
+			fmt.Printf("error create csv: %v\n", err)
+		}
+	}
 }
 
 func (t *Topology) ClearStatsTimeWindow() {

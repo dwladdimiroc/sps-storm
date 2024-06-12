@@ -50,9 +50,11 @@ func updateStatsInputStream(topology *storm.Topology, metrics storm.TopologyMetr
 	}
 
 	for i := range topology.Bolts {
-		inputBoltCurrent := topology.Bolts[i].Input - topology.Bolts[i].InputTotal
-		topology.Bolts[i].InputTotal = topology.Bolts[i].Input
-		topology.Bolts[i].Input = inputBoltCurrent
+		if topology.Bolts[i].Input > 0 {
+			inputBoltCurrent := topology.Bolts[i].Input - topology.Bolts[i].InputTotal
+			topology.Bolts[i].InputTotal = topology.Bolts[i].Input
+			topology.Bolts[i].Input = inputBoltCurrent
+		}
 	}
 
 	inputRateCurrent := inputRate - topology.InputRateAccum // difference between inputRate_{t} and inputRate_{t-1}
@@ -61,7 +63,6 @@ func updateStatsInputStream(topology *storm.Topology, metrics storm.TopologyMetr
 	//log.Printf("[monitor] period={%d},inputRate={%d}", period, inputRate)
 }
 
-// TODO This latency is not sure, it must be fixed
 func updateCompleteLatency(topology *storm.Topology, metrics storm.TopologyMetrics) {
 	var completeLatency float64
 	for _, spout := range metrics.Spouts {
@@ -100,7 +101,7 @@ func updateOutputBolt(topology *storm.Topology, boltMetrics storm.BoltMetrics) {
 					topology.Bolts[i].Output = boltStats.Executed
 				}
 			}
-			outputBoltCurrent := topology.Bolts[i].ExecutedTotal - topology.Bolts[i].Output
+			outputBoltCurrent := topology.Bolts[i].Output - topology.Bolts[i].ExecutedTotal
 			topology.Bolts[i].ExecutedTotal = topology.Bolts[i].Output
 			topology.Bolts[i].Output = outputBoltCurrent
 		}
@@ -126,17 +127,20 @@ func updateExecutedAvg(topology *storm.Topology, boltMetrics storm.BoltMetrics) 
 }
 
 func updateInputBolt(bolt *storm.Bolt, topologyMetrics storm.TopologyMetrics) {
+	var inputBolt int64
 	for _, boltMetrics := range topologyMetrics.Bolts {
 		for _, boltStats := range boltMetrics.OutputStats {
 			if boltStats.Stream == bolt.Name {
-				bolt.Input += boltStats.Emitted
+				inputBolt += boltStats.Emitted
 			}
 		}
 	}
 
-	inputBoltCurrent := bolt.Input - bolt.InputTotal
-	bolt.InputTotal = bolt.Input
-	bolt.Input = inputBoltCurrent
+	if inputBolt > 0 {
+		inputBoltCurrent := inputBolt - bolt.InputTotal
+		bolt.InputTotal = inputBolt
+		bolt.Input = inputBoltCurrent
+	}
 }
 
 func updateQueue(bolt *storm.Bolt) {

@@ -4,10 +4,12 @@ import (
 	"github.com/dwladdimiroc/sps-storm/internal/storm"
 	"github.com/jasonlvhit/gocron"
 	"github.com/spf13/viper"
+	"log"
 	"time"
 )
 
 var topology *storm.Topology
+var topologyPrevious *storm.Topology
 var period int
 var schedulerAdaptive *gocron.Scheduler
 
@@ -16,6 +18,7 @@ func Init(topologyId string) {
 	topology.Init(topologyId)
 	summaryTopology := storm.GetSummaryTopology(topology.Id)
 	topology.CreateTopology(summaryTopology)
+	log.Printf("Topology created\n")
 	schedulerAdaptive = gocron.NewScheduler()
 }
 
@@ -28,7 +31,7 @@ func Start(limit time.Duration) {
 }
 
 func adaptiveSystem(topology *storm.Topology) {
-	if ok := monitor(topology.Id, topology); ok {
+	if ok := monitor(topology); ok {
 		if viper.GetBool("storm.deploy.analyze") {
 			if period%viper.GetInt("storm.adaptive.analyze_samples") == 0 {
 				analyze(topology)

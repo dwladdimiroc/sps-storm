@@ -14,8 +14,8 @@ predictor:
 storm:
   deploy:
     duration: 22
-    script: "App1.sh"
-    analyze: true
+    script: "serverlessApp.sh"
+    analyze: false
   adaptive:
     time_window_size: 5
     benchmark_samples: 12

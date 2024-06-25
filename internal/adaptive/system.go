@@ -18,6 +18,7 @@ func Init(topologyId string) {
 	topology.Init(topologyId)
 	summaryTopology := storm.GetSummaryTopology(topology.Id)
 	topology.CreateTopology(summaryTopology)
+	topology.InitReplicas()
 	log.Printf("Topology created\n")
 	schedulerAdaptive = gocron.NewScheduler()
 }

@@ -3,7 +3,7 @@ from flask import Flask, request, jsonify
 from ann import ann_prediction
 from fft import fft_prediction
 from random_forest import rf_prediction
-from regression_linear import regression_linear_prediction
+from linear_regression import linear_regression_prediction
 
 app = Flask(__name__)
 

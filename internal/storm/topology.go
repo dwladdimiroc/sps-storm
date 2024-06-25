@@ -4,7 +4,9 @@ import (
 	"fmt"
 	"github.com/dwladdimiroc/sps-storm/internal/util"
 	"github.com/montanaflynn/stats"
+	"log"
 	"math"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -96,6 +98,14 @@ func (t *Topology) CreateTopology(summaryTopology SummaryTopology) {
 	for _, bolt := range t.Bolts {
 		if err := util.CreateCsv(t.Id, bolt.Name, []Bolt{}); err != nil {
 			fmt.Printf("error create csv: %v\n", err)
+		}
+	}
+}
+
+func (t *Topology) InitReplicas() {
+	for _, bolt := range t.Bolts {
+		if errRedis := util.RedisSet(bolt.Name, strconv.FormatInt(1, 10)); errRedis != nil {
+			log.Printf("init replicas error: %v\n", errRedis)
 		}
 	}
 }

@@ -26,7 +26,7 @@ func monitor(topology *storm.Topology) bool {
 
 func updateTopology(topology *storm.Topology, metrics storm.TopologyMetrics) {
 	updateStatsInputStream(topology, metrics)
-	updateCompleteLatency(topology, metrics)
+	updateCompleteLatency(topology)
 	updateStatsBolt(topology, metrics)
 	updatePredictedInput(topology)
 }
@@ -63,17 +63,10 @@ func updateStatsInputStream(topology *storm.Topology, metrics storm.TopologyMetr
 	//log.Printf("[monitor] period={%d},inputRate={%d}", period, inputRate)
 }
 
-func updateCompleteLatency(topology *storm.Topology, metrics storm.TopologyMetrics) {
-	var completeLatency float64
-	for _, spout := range metrics.Spouts {
-		for _, stats := range spout.SpoutSummary {
-			if stats.Window == ":all-time" {
-				completeLatency += stats.CompleteLatency * float64(stats.Emitted) / float64(topology.InputRate[len(topology.InputRate)-1])
-			}
-		}
-	}
+// TODO Realizar el calculo segun la ventana de tiempo
+func updateCompleteLatency(topology *storm.Topology) {
 	for i := range topology.Bolts {
-		topology.Bolts[i].CompleteLatency = completeLatency
+		topology.Bolts[i].CompleteLatency = util.GetLatency()
 	}
 }
 

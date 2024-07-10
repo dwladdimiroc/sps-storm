@@ -4,7 +4,6 @@ import (
 	"github.com/dwladdimiroc/sps-storm/internal/adaptive"
 	"github.com/dwladdimiroc/sps-storm/internal/app"
 	"github.com/dwladdimiroc/sps-storm/internal/util"
-
 	"github.com/spf13/viper"
 	"log"
 	"time"

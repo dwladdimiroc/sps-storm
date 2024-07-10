@@ -2,6 +2,7 @@ package adaptive
 
 import (
 	"github.com/dwladdimiroc/sps-storm/internal/storm"
+	"github.com/dwladdimiroc/sps-storm/internal/util"
 	"github.com/jasonlvhit/gocron"
 	"github.com/spf13/viper"
 	"log"
@@ -9,7 +10,6 @@ import (
 )
 
 var topology *storm.Topology
-var topologyPrevious *storm.Topology
 var period int
 var schedulerAdaptive *gocron.Scheduler
 
@@ -20,6 +20,7 @@ func Init(topologyId string) {
 	topology.CreateTopology(summaryTopology)
 	topology.InitReplicas()
 	log.Printf("Topology created\n")
+	go util.InitServer()
 	schedulerAdaptive = gocron.NewScheduler()
 }
 

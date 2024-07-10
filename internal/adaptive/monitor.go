@@ -63,7 +63,6 @@ func updateStatsInputStream(topology *storm.Topology, metrics storm.TopologyMetr
 	//log.Printf("[monitor] period={%d},inputRate={%d}", period, inputRate)
 }
 
-// TODO Realizar el calculo segun la ventana de tiempo
 func updateCompleteLatency(topology *storm.Topology) {
 	for i := range topology.Bolts {
 		topology.Bolts[i].CompleteLatency = util.GetLatency()

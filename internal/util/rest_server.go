@@ -16,7 +16,7 @@ type RequestData struct {
 func InitServer() {
 	http.HandleFunc("/sendLatency", sendLatency)
 	log.Println("server: init")
-	http.ListenAndServe(":"+viper.GetString("storm.http_server.port"), nil)
+	http.ListenAndServe(":"+viper.GetString("storm.rest_metric.port"), nil)
 }
 
 func sendLatency(w http.ResponseWriter, r *http.Request) {

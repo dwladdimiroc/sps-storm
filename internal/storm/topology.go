@@ -47,13 +47,17 @@ type Spout struct {
 }
 
 type Topology struct {
-	Id                 string
-	Benchmark          bool
-	InputRateAccum     int64
-	InputRate          []int64
-	PredictedInputRate []int64
-	Bolts              []Bolt
-	Spouts             []Spout
+	Id                  string  `csv:"-"`
+	Time                int64   `csv:"time"`
+	Benchmark           bool    `csv:"-"`
+	InputRateAccum      int64   `csv:"-"`
+	InputRate           []int64 `csv:"-"`
+	PredictedInputRate  []int64 `csv:"-"`
+	Bolts               []Bolt  `csv:"-"`
+	Spouts              []Spout `csv:"-"`
+	PredictedInputRateT int64   `csv:"input_rate"`
+	Latency             float64 `csv:"latency"`
+	CPU                 float64 `csv:"cpu"`
 }
 
 func (t *Topology) Init(id string) {
@@ -99,6 +103,10 @@ func (t *Topology) CreateTopology(summaryTopology SummaryTopology) {
 		if err := util.CreateCsv(t.Id, bolt.Name, []Bolt{}); err != nil {
 			fmt.Printf("error create csv: %v\n", err)
 		}
+	}
+
+	if err := util.CreateCsv(t.Id, "Topology", []Topology{}); err != nil {
+		fmt.Printf("error create csv: %v\n", err)
 	}
 }
 

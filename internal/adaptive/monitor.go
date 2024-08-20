@@ -26,8 +26,9 @@ func monitor(topology *storm.Topology) bool {
 
 func updateTopology(topology *storm.Topology, metrics storm.TopologyMetrics) {
 	updateStatsInputStream(topology, metrics)
-	updateCompleteLatency(topology)
 	updateStatsBolt(topology, metrics)
+	updateLatency(topology)
+	updateCPU(topology)
 	updatePredictedInput(topology)
 }
 
@@ -63,10 +64,13 @@ func updateStatsInputStream(topology *storm.Topology, metrics storm.TopologyMetr
 	//log.Printf("[monitor] period={%d},inputRate={%d}", period, inputRate)
 }
 
-func updateCompleteLatency(topology *storm.Topology) {
-	for i := range topology.Bolts {
-		topology.Bolts[i].CompleteLatency = util.GetLatency()
-	}
+func updateLatency(topology *storm.Topology) {
+	topology.Time = int64(period) * viper.GetInt64("storm.adaptive.time_window_size")
+	topology.Latency = util.GetLatency()
+}
+
+func updateCPU(topology *storm.Topology) {
+	topology.CPU = util.GetCPU()
 }
 
 func updateStatsBolt(topology *storm.Topology, metrics storm.TopologyMetrics) {
@@ -143,9 +147,7 @@ func updateQueue(bolt *storm.Bolt) {
 
 func updatePredictedInput(topology *storm.Topology) {
 	if len(topology.PredictedInputRate) > 0 {
-		for i := range topology.Bolts {
-			topology.Bolts[i].PredictedInput = topology.PredictedInputRate[period]
-		}
+		topology.PredictedInputRateT = topology.PredictedInputRate[period]
 	}
 }
 
@@ -155,4 +157,9 @@ func saveMetrics(topology storm.Topology) {
 			log.Printf("error write csv: %v\n", err)
 		}
 	}
+
+	if err := util.WriteCsv(topology.Id, "Topology", []storm.Topology{topology}); err != nil {
+		log.Printf("error write csv: %v\n", err)
+	}
+
 }

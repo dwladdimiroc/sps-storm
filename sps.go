@@ -10,6 +10,7 @@ import (
 )
 
 func main() {
+
 	if err := util.LoadConfig(); err != nil {
 		log.Panicf("error load config: %v\n", err)
 	}

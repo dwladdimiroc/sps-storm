@@ -20,8 +20,14 @@ storm:
     time_window_size: 5
     benchmark_samples: 12
     analyze_samples: 6
-    predictive_model: lineal
+    predictive_model: basic
     prediction_samples: 12
     prediction_number: 6
     limit_replicas: 100
+  rest_metric:
+    port: 3000
   csv: "stats/"
+
+gcp:
+  auth_credential: "~/.config/gcloud/application_default_credentials.json"
+  project: "sps-storm"

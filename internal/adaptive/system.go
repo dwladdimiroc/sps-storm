@@ -1,6 +1,7 @@
 package adaptive
 
 import (
+	"github.com/dwladdimiroc/sps-storm/internal/predictive"
 	"github.com/dwladdimiroc/sps-storm/internal/storm"
 	"github.com/dwladdimiroc/sps-storm/internal/util"
 	"github.com/jasonlvhit/gocron"
@@ -21,6 +22,7 @@ func Init(topologyId string) {
 	topology.InitReplicas()
 	log.Printf("Topology created\n")
 	go util.InitServer()
+	predictive.InitPrediction()
 	schedulerAdaptive = gocron.NewScheduler()
 }
 
@@ -35,12 +37,7 @@ func Start(limit time.Duration) {
 func adaptiveSystem(topology *storm.Topology) {
 	if ok := monitor(topology); ok {
 		if viper.GetBool("storm.deploy.analyze") {
-			if period%viper.GetInt("storm.adaptive.analyze_samples") == 0 {
-				analyze(topology)
-				planning(topology)
-				execute(*topology)
-				topology.ClearQueue()
-			}
+			analyze(topology)
 		}
 	}
 	topology.ClearStatsTimeWindow()

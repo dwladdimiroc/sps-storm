@@ -28,7 +28,6 @@ func updateTopology(topology *storm.Topology, metrics storm.TopologyMetrics) {
 	updateStatsInputStream(topology, metrics)
 	updateStatsBolt(topology, metrics)
 	updateLatency(topology)
-	updateCPU(topology)
 	updatePredictedInput(topology)
 }
 
@@ -67,10 +66,6 @@ func updateStatsInputStream(topology *storm.Topology, metrics storm.TopologyMetr
 func updateLatency(topology *storm.Topology) {
 	topology.Time = int64(period) * viper.GetInt64("storm.adaptive.time_window_size")
 	topology.Latency = util.GetLatency()
-}
-
-func updateCPU(topology *storm.Topology) {
-	topology.CPU = util.GetCPU()
 }
 
 func updateStatsBolt(topology *storm.Topology, metrics storm.TopologyMetrics) {
@@ -146,6 +141,8 @@ func updateQueue(bolt *storm.Bolt) {
 }
 
 func updatePredictedInput(topology *storm.Topology) {
+	topology.InputRateT = topology.InputRate[period]
+
 	if len(topology.PredictedInputRate) > 0 {
 		topology.PredictedInputRateT = topology.PredictedInputRate[period]
 	}

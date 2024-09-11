@@ -14,19 +14,18 @@ import (
 type Bolt struct {
 	Name                            string    `csv:"name"`
 	Time                            int64     `csv:"time"`
-	Replicas                        int64     `csv:"replicas"`
-	PredictionReplicas              int64     `csv:"prediction_replicas"`
+	Replicas                        int64     `csv:"replicas"` //r_t
+	PredictionReplicas              int64     `csv:"-"`        //r_t+1
 	Input                           int64     `csv:"input"`
 	InputTotal                      int64     `csv:"-"`
 	Output                          int64     `csv:"output"`
 	Queue                           int64     `csv:"queue"`
+	PredictionQueue                 int64     `csv:"-"`
 	ExecutedTimeAvg                 float64   `csv:"executed_time_avg"`
 	ExecutedTimeAvgSamples          []float64 `csv:"-"`
 	ExecutedTimeBenchmarkAvg        float64   `csv:"executed_time_benchmark_avg"`
 	ExecutedTimeBenchmarkAvgSamples []float64 `csv:"-"`
 	ExecutedTotal                   int64     `csv:"executed_total"`
-	CompleteLatency                 float64   `csv:"complete_latency"`
-	PredictedInput                  int64     `csv:"predicted_input"`
 	BoltsPredecessor                []string  `csv:"-"`
 }
 
@@ -51,13 +50,13 @@ type Topology struct {
 	Time                int64   `csv:"time"`
 	Benchmark           bool    `csv:"-"`
 	InputRateAccum      int64   `csv:"-"`
+	InputRateT          int64   `csv:"input_rate"`
 	InputRate           []int64 `csv:"-"`
 	PredictedInputRate  []int64 `csv:"-"`
+	PredictedInputRateT int64   `csv:"predicted_input_rate"`
+	Latency             float64 `csv:"latency"`
 	Bolts               []Bolt  `csv:"-"`
 	Spouts              []Spout `csv:"-"`
-	PredictedInputRateT int64   `csv:"input_rate"`
-	Latency             float64 `csv:"latency"`
-	CPU                 float64 `csv:"cpu"`
 }
 
 func (t *Topology) Init(id string) {

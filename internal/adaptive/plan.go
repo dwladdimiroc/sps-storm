@@ -19,4 +19,5 @@ func planning(topology *storm.Topology) {
 		//log.Printf("planning: ok\n")
 		//log.Printf("planning: bolt={%s},replicas={%d}\n", topology.Bolts[i].Name, topology.Bolts[i].Replicas)
 	}
+	execute(*topology)
 }

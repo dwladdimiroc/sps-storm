@@ -3,6 +3,7 @@ package predictive
 import (
 	"github.com/dwladdimiroc/sps-storm/internal/storm"
 	"github.com/spf13/viper"
+	"log"
 	"math"
 	"sync"
 )
@@ -16,12 +17,16 @@ type PredictionInput struct {
 	ErrorEstimation float64
 }
 
+func GetAllPred() []PredictionInput {
+	return predictions
+}
+
 func GetPred() PredictionInput {
 	return predictions[indexChosenPredictor]
 }
 
 func InitPrediction() {
-	var basic, lr, fft, ann, rf PredictionInput
+	var basic, lr, fft, ann, rf, svm, bayesian, ridge, gaussian, sgd PredictionInput
 	//Basic
 	basic.NameModel = "basic"
 	basic.PredictedInput = make([]float64, viper.GetInt("storm.adaptive.analyze_samples"))
@@ -42,22 +47,42 @@ func InitPrediction() {
 	ann.NameModel = "ann"
 	ann.PredictedInput = make([]float64, viper.GetInt("storm.adaptive.analyze_samples"))
 	predictions = append(predictions, ann)
+	//SVM
+	svm.NameModel = "svm"
+	svm.PredictedInput = make([]float64, viper.GetInt("storm.adaptive.analyze_samples"))
+	predictions = append(predictions, svm)
+	//Bayesian
+	bayesian.NameModel = "bayesian"
+	bayesian.PredictedInput = make([]float64, viper.GetInt("storm.adaptive.analyze_samples"))
+	predictions = append(predictions, bayesian)
+	//Ridge
+	ridge.NameModel = "ridge"
+	ridge.PredictedInput = make([]float64, viper.GetInt("storm.adaptive.analyze_samples"))
+	predictions = append(predictions, ridge)
+	//Gaussian
+	gaussian.NameModel = "gaussian"
+	gaussian.PredictedInput = make([]float64, viper.GetInt("storm.adaptive.analyze_samples"))
+	predictions = append(predictions, gaussian)
+	//MPL (ANN)
+	sgd.NameModel = "sgd"
+	sgd.PredictedInput = make([]float64, viper.GetInt("storm.adaptive.analyze_samples"))
+	predictions = append(predictions, sgd)
 }
 
-func PredictInput(topology *storm.Topology) {
+func PredictInput(topology *storm.Topology, period int) {
 	predictions[0].PredictedInput = append(predictions[0].PredictedInput, Simple(topology)...)
 
 	var wg sync.WaitGroup
 
 	for i := 1; i < len(predictions); i++ {
 		wg.Add(1)
-		go GetPredictionInput(topology, i, &wg)
+		go GetPredictionInput(topology, i, &wg, period)
 	}
 
 	wg.Wait()
 }
 
-func GetPredictionInput(topology *storm.Topology, indexPredictor int, wg *sync.WaitGroup) {
+func GetPredictionInput(topology *storm.Topology, indexPredictor int, wg *sync.WaitGroup, period int) {
 	defer wg.Done()
 
 	var samples []float64
@@ -71,8 +96,9 @@ func GetPredictionInput(topology *storm.Topology, indexPredictor int, wg *sync.W
 		//log.Printf("analyze: train: index={%d},sample={%v},\n", i, topology.InputRate[i])
 	}
 
-	//log.Printf("analyze: get prediction: samples={%v}\n", samples)
-	predictions[indexPredictor].PredictedInput = append(predictions[indexPredictor].PredictedInput, GetPrediction(samples, viper.GetInt("storm.adaptive.prediction_number"), predictions[indexPredictor].NameModel)...)
+	resultsPrediction := GetPrediction(samples, viper.GetInt("storm.adaptive.prediction_number"), predictions[indexPredictor].NameModel)
+	log.Printf("[t=%d] analyze: get prediction={%s}: samples={%v},lenSamples={%d},prediction={%v},lenPrediction={%d}\n", period, predictions[indexPredictor].NameModel, samples, len(samples), resultsPrediction, len(resultsPrediction))
+	predictions[indexPredictor].PredictedInput = append(predictions[indexPredictor].PredictedInput, resultsPrediction...)
 }
 
 func DeterminatePredictor(topology *storm.Topology) {
@@ -89,16 +115,26 @@ func DeterminatePredictor(topology *storm.Topology) {
 		}
 	}
 
-	indexChosenPredictor = indexPredictor
+	if viper.GetString("storm.adaptive.predictive_model") == "multi" {
+		indexChosenPredictor = indexPredictor
+	} else {
+		for i := 0; i < len(predictions); i++ {
+			if predictions[i].NameModel == viper.GetString("storm.adaptive.predictive_model") {
+				indexChosenPredictor = i
+				return
+			}
+		}
+	}
 }
 
+// RMSE
 func calculateError(input []int64) {
 	for k := 0; k < len(predictions); k++ {
 		var errorEst float64
 		for i := len(input) - viper.GetInt("storm.adaptive.prediction_number"); i < len(input); i++ {
-			errorEst += math.Abs(predictions[k].PredictedInput[i]-float64(input[i])) / float64(input[i])
+			errorEst += math.Pow(predictions[k].PredictedInput[i]-float64(input[i]), 2.0)
 		}
-		predictions[k].ErrorEstimation = errorEst / float64(len(input))
+		predictions[k].ErrorEstimation = math.Sqrt(errorEst / float64(viper.GetInt("storm.adaptive.prediction_number")))
 	}
 }
 

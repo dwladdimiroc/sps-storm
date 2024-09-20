@@ -15,14 +15,15 @@ storm:
   deploy:
     duration: 22
     script: "serverlessApp.sh"
-    analyze: false
+    dataset: "dns"
+    analyze: true
   adaptive:
-    time_window_size: 5
-    benchmark_samples: 12
-    analyze_samples: 6
-    predictive_model: basic
-    prediction_samples: 12
-    prediction_number: 6
+    time_window_size: 1
+    benchmark_samples: 60
+    analyze_samples: 15
+    predictive_model: multi
+    prediction_samples: 30
+    prediction_number: 15
     limit_replicas: 100
   rest_metric:
     port: 3000

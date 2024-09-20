@@ -1,6 +1,7 @@
 package adaptive
 
 import (
+	"github.com/dwladdimiroc/sps-storm/internal/predictive"
 	"github.com/dwladdimiroc/sps-storm/internal/storm"
 	"github.com/dwladdimiroc/sps-storm/internal/util"
 	"github.com/spf13/viper"
@@ -52,14 +53,25 @@ func updateStatsInputStream(topology *storm.Topology, metrics storm.TopologyMetr
 	for i := range topology.Bolts {
 		if topology.Bolts[i].Input > 0 {
 			inputBoltCurrent := topology.Bolts[i].Input - topology.Bolts[i].InputTotal
-			topology.Bolts[i].InputTotal = topology.Bolts[i].Input
-			topology.Bolts[i].Input = inputBoltCurrent
+			if inputBoltCurrent > 0 {
+				topology.Bolts[i].InputTotal = topology.Bolts[i].Input
+				topology.Bolts[i].Input = inputBoltCurrent
+			} else {
+				topology.Bolts[i].InputTotal += topology.InputRate[len(topology.InputRate)-1]
+				topology.Bolts[i].Input = topology.InputRate[len(topology.InputRate)-1]
+			}
 		}
 	}
 
 	inputRateCurrent := inputRate - topology.InputRateAccum // difference between inputRate_{t} and inputRate_{t-1}
 	topology.InputRateAccum = inputRate
-	topology.InputRate = append(topology.InputRate, inputRateCurrent)
+	if topology.InputRateAccum > 0 {
+		topology.InputRate = append(topology.InputRate, inputRateCurrent)
+	} else {
+		if len(topology.InputRate) > 0 {
+			topology.InputRate = append(topology.InputRate, topology.InputRate[len(topology.InputRate)-1])
+		}
+	}
 	//log.Printf("[monitor] period={%d},inputRate={%d}", period, inputRate)
 }
 
@@ -144,6 +156,7 @@ func updatePredictedInput(topology *storm.Topology) {
 	topology.InputRateT = topology.InputRate[period]
 
 	if len(topology.PredictedInputRate) > 0 {
+		topology.PredictModel = predictive.GetPred().NameModel
 		topology.PredictedInputRateT = topology.PredictedInputRate[period]
 	}
 }

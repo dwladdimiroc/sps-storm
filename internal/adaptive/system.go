@@ -28,7 +28,10 @@ func Init(topologyId string) {
 
 func Start(limit time.Duration) {
 	go func(schedulerAdaptive *gocron.Scheduler) {
-		schedulerAdaptive.Every(uint64(viper.GetInt("storm.adaptive.time_window_size"))).Seconds().Do(adaptiveSystem, topology)
+		if err := schedulerAdaptive.Every(uint64(viper.GetInt("storm.adaptive.time_window_size"))).Seconds().Do(adaptiveSystem, topology); err != nil {
+			log.Printf("scheduler: fatal error={%v}", err)
+			return
+		}
 		<-schedulerAdaptive.Start()
 	}(schedulerAdaptive)
 	time.Sleep(limit)

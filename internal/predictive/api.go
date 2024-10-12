@@ -3,9 +3,9 @@ package predictive
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"github.com/spf13/viper"
 	"io"
+	"log"
 	"net/http"
 	"strings"
 )
@@ -44,18 +44,18 @@ func GetPrediction(samples []float64, predictionNumber int, predictorModel strin
 	}
 
 	if b, err := json.Marshal(body); err != nil {
-		fmt.Printf("storm get prediction: %v\n", err)
+		log.Printf("storm get prediction: %v\n", err)
 	} else {
 		predictor := parseURL(PredictorURL, predictorModel)
 		if res, err := http.Post(predictor, "application/json", bytes.NewBuffer(b)); err != nil {
-			fmt.Printf("storm get prediction: %v\n", err)
+			log.Printf("storm get prediction: %v\n", err)
 		} else {
 			data, _ := io.ReadAll(res.Body)
 			if err := res.Body.Close(); err != nil {
-				fmt.Printf("storm get prediction: %v\n", err)
+				log.Printf("storm get prediction: %v\n", err)
 			} else {
 				if err := json.Unmarshal(data, &resp); err != nil {
-					fmt.Printf("storm get prediction: %v\n", err)
+					log.Printf("storm get prediction: %v\n", err)
 				}
 			}
 		}

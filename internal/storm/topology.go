@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/dwladdimiroc/sps-storm/internal/util"
 	"github.com/montanaflynn/stats"
+	"github.com/spf13/viper"
 	"log"
 	"math"
 	"strconv"
@@ -62,6 +63,7 @@ type Topology struct {
 
 func (t *Topology) Init(id string) {
 	t.Id = id
+	t.PredictedInputRate = make([]int64, viper.GetInt("storm.adaptive.analyze_samples"))
 }
 
 func (t *Topology) CreateTopology(summaryTopology SummaryTopology) {

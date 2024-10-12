@@ -15,7 +15,7 @@ storm:
   deploy:
     duration: 22
     script: "serverlessApp.sh"
-    dataset: "dns"
+    dataset: "twitterlow"
     analyze: true
   adaptive:
     time_window_size: 1
@@ -24,7 +24,8 @@ storm:
     predictive_model: multi
     prediction_samples: 30
     prediction_number: 15
-    limit_replicas: 100
+    planning_samples: 5
+    limit_replicas: 25
   rest_metric:
     port: 3000
   csv: "stats/"
